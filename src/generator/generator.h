@@ -1,13 +1,15 @@
 #ifndef PHOTOG_GENERATOR_H
 #define PHOTOG_GENERATOR_H
 
+#include <iostream>
+
 #include "Halide.h"
 
 namespace photog {
     template<class T>
     class generator : public Halide::Generator<T> {
     protected:
-        bool manual_schedule{false};
+        Halide::GeneratorParam<bool> manual_schedule{"manual_schedule", false};
         // External control of auto-scheduling estimates
         Halide::GeneratorParam<int> x_max{"x_max", 3456};
         Halide::GeneratorParam<int> y_max{"y_max", 4608};
@@ -19,18 +21,25 @@ namespace photog {
             } else if (manual_schedule) {
                 schedule_manual();
             } else {
-                // TODO: Can we make this more descriptive when it fails?
-                assert(false && "Non-auto-schedule not supported.");
+                std::cerr
+                        << "photog::generator::schedule(): One of auto_schedule and manual_schedule need to be set to true."
+                        << std::endl;
                 abort();
             }
         }
 
         virtual void schedule_auto() {
-            // TODO: Warn user that they need to override this for auto scheduling.
+            std::cerr
+                    << "photog::generator::schedule_auto() override required when auto_schedule is true."
+                    << std::endl;
+            abort();
         }
 
         virtual void schedule_manual() {
-            // TODO: Warn user that they need to override this for manual scheduling.
+            std::cerr
+                    << "photog::generator::schedule_manual() override required when manual_schedule is true."
+                    << std::endl;
+            abort();
         }
     };
 } // namespace photog
