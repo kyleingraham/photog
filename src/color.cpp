@@ -1,11 +1,7 @@
-#include "Halide.h"
+#include "photog_generator.h" // works because header is in same folder
 
-class SrgbToLinear : public Halide::Generator<SrgbToLinear> {
+class SrgbToLinear : public photog::generator<SrgbToLinear> {
 public:
-    // External control of how this function is auto-scheduled
-    GeneratorParam<int> x_max{"x_max", 3456};
-    GeneratorParam<int> y_max{"y_max", 4608};
-
     Input <Func> srgb{"srgb"};
     Output <Func> linear{"linear"};
 
@@ -19,23 +15,16 @@ public:
                                                  1.055f, 2.4f));
     }
 
-    void schedule() {
-        if (auto_schedule) {
-            const int X{x_max}, Y{y_max}, C{3};
+    void schedule_auto() override {
+        const int X{x_max}, Y{y_max}, C{3};
 
-            srgb.set_estimate(srgb.args()[0], 0, X);
-            srgb.set_estimate(srgb.args()[1], 0, Y);
-            srgb.set_estimate(srgb.args()[2], 0, C);
+        srgb.set_estimate(srgb.args()[0], 0, X);
+        srgb.set_estimate(srgb.args()[1], 0, Y);
+        srgb.set_estimate(srgb.args()[2], 0, C);
 
-            linear.set_estimates({{0, X},
-                                  {0, Y},
-                                  {0, C}});
-
-        } else {
-            // TODO: Can we make this more descriptive when it fails?
-            assert(false && "Non-auto-schedule not supported.");
-            abort();
-        }
+        linear.set_estimates({{0, X},
+                              {0, Y},
+                              {0, C}});
     }
 };
 
