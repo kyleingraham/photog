@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.19)
+project(photog)
+
+include(CTest)
+
+# Setup language settings
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
+set(CMAKE_CXX_EXTENSIONS NO)
+
+# Find Halide
+find_package(Halide REQUIRED)
+
+add_subdirectory(src)
+
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+    add_subdirectory(test)
+endif ()
