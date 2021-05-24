@@ -1,4 +1,4 @@
-#include "photog_generator.h" // works because header is in same folder
+#include "generator.h"
 
 class SrgbToLinear : public photog::generator<SrgbToLinear> {
 public:
@@ -29,5 +29,5 @@ public:
 };
 
 // TODO: Namespace via 'photog_' prefix.
-// TODO: Can we make these function part of the API?
+// TODO: Can we make these function part of the API? Better to make generators available?
 HALIDE_REGISTER_GENERATOR(SrgbToLinear, srgb_to_linear);

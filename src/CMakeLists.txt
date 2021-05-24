@@ -1,17 +1,4 @@
-# Halide bundles all of their headers into one -> Halide.h
-# We won't do the same here. We'll start with the custom generator and later add generated headers.
-# photog custom generator library
-add_library(photog_generator photog_generator.cpp photog_generator.h)
-target_include_directories(photog_generator
-        PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>") # revisit when configuring installation
-if (APPLE)
-    target_link_libraries(photog_generator
-            PUBLIC Halide::Generator) # https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#transitive-usage-requirements
-endif ()
-
-# General photog library
+add_subdirectory(generator)
 
 # color.cpp generators
 add_executable(color.generators color.cpp)
