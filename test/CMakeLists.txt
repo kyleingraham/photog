@@ -7,7 +7,7 @@ endif ()
 add_executable(tests tests.cpp)
 
 target_link_libraries(tests
-        PRIVATE doctest::doctest Halide::Tools srgb_to_linear) # linking add_halide_library output brings in headers and libraries
+        PRIVATE doctest::doctest Halide::Tools photog_srgb_to_linear) # linking add_halide_library output brings in headers and libraries
 
 ## Linking for JPEG/PNG libraries is different between OS's
 if (APPLE)

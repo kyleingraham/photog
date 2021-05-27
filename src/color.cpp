@@ -1,6 +1,6 @@
 #include "generator.h"
 
-class SrgbToLinear : public photog::generator<SrgbToLinear> {
+class srgb_to_linear : public photog::generator<srgb_to_linear> {
 public:
     Input <Func> srgb{"srgb"};
     Output <Func> linear{"linear"};
@@ -28,6 +28,5 @@ public:
     }
 };
 
-// TODO: Namespace via 'photog_' prefix.
 // TODO: Can we make these function part of the API? Better to make generators available?
-HALIDE_REGISTER_GENERATOR(SrgbToLinear, srgb_to_linear);
+HALIDE_REGISTER_GENERATOR(srgb_to_linear, photog_srgb_to_linear);

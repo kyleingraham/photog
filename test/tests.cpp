@@ -7,7 +7,7 @@
 #include "HalideBuffer.h"
 
 // Available after a CMake build
-#include "srgb_to_linear.h"
+#include "photog_srgb_to_linear.h"
 
 TEST_CASE ("testing srgb_to_linear") {
     std::string file_path = R"(images/rgb.jpg)";
@@ -16,7 +16,7 @@ TEST_CASE ("testing srgb_to_linear") {
     Halide::Runtime::Buffer<float> output =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
-    srgb_to_linear(input, output);
+    photog_srgb_to_linear(input, output);
 
     // 0.04045f < input(x, y, c)
             CHECK(output(0, 0, 0) == doctest::Approx(0.423268f));
