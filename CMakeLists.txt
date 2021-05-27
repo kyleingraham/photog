@@ -9,6 +9,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
 # Find Halide
+if (APPLE)
+    # Prevents latching onto JPEG/PNG libraries vendored within frameworks
+    set(CMAKE_FIND_FRAMEWORK LAST)
+endif ()
 find_package(Halide REQUIRED)
 
 add_subdirectory(src)

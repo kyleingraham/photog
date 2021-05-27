@@ -10,11 +10,15 @@ namespace photog {
     class generator : public Halide::Generator<T> {
     protected:
         Halide::GeneratorParam<bool> manual_schedule{"manual_schedule", false};
-        // External control of auto-scheduling estimates
+        // Use these parameters for external control of auto-scheduling estimates.
+        // Use in your auto-schedule to set max extents for x and y vars.
         Halide::GeneratorParam<int> x_max{"x_max", 3456};
         Halide::GeneratorParam<int> y_max{"y_max", 4608};
 
     public:
+        /** Called by Halide for your algorithm's schedule. Calls schedule_auto/schedule_manual
+         * when auto_schedule/manual_schedule respectively are set to true. Auto-scheduling is
+         * prioritized over manual schedules.*/
         void schedule() {
             if (this->auto_schedule) {
                 schedule_auto();
@@ -28,6 +32,7 @@ namespace photog {
             }
         }
 
+        /** Override to specify auto-schedule estimates. Called when auto_schedule=true.*/
         virtual void schedule_auto() {
             std::cerr
                     << "photog::generator::schedule_auto() override required when auto_schedule is true."
@@ -35,6 +40,7 @@ namespace photog {
             abort();
         }
 
+        /** Override to specify a manual schedule. Called when manual_schedule=true.*/
         virtual void schedule_manual() {
             std::cerr
                     << "photog::generator::schedule_manual() override required when manual_schedule is true."
@@ -44,4 +50,4 @@ namespace photog {
     };
 } // namespace photog
 
-#endif //PHOTOG_GENERATOR_H
+#endif // PHOTOG_GENERATOR_H

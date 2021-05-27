@@ -3,16 +3,6 @@ if (APPLE)
     find_package(doctest REQUIRED)
 endif ()
 
-# Find JPEG library
-if (APPLE)
-    find_package(JPEG REQUIRED)
-endif ()
-
-# Find PNG library
-if (APPLE)
-    find_package(PNG REQUIRED)
-endif ()
-
 # Test executable
 add_executable(tests tests.cpp)
 

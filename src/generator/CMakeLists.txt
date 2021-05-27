@@ -7,5 +7,5 @@ target_include_directories(photog_generator
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>") # TODO: Revisit when configuring installation.
 if (APPLE)
     target_link_libraries(photog_generator
-            INTERFACE Halide::Generator)
+            INTERFACE Halide::Halide)
 endif ()
