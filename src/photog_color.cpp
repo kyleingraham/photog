@@ -54,7 +54,7 @@ namespace photog {
                 rgb_to_xyz_xfmrs.at(working_space).data(),
                 {3, 3});
     }
-}
+} // namespace photog
 
 halide_buffer_t *photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
     // TODO: What are the ownership considerations here?
