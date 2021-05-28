@@ -1,5 +1,5 @@
-#ifndef PHOTOG_GENERATOR_H
-#define PHOTOG_GENERATOR_H
+#ifndef PHOTOG_PHOTOG_GENERATOR_H
+#define PHOTOG_PHOTOG_GENERATOR_H
 
 #include <iostream>
 
@@ -50,4 +50,4 @@ namespace photog {
     };
 } // namespace photog
 
-#endif // PHOTOG_GENERATOR_H
+#endif // PHOTOG_PHOTOG_GENERATOR_H

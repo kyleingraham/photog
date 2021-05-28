@@ -1,6 +1,6 @@
 # photog Generator library
 add_library(photog_generator INTERFACE)
-target_sources(photog_generator INTERFACE generator.h)
+target_sources(photog_generator INTERFACE photog_generator.h)
 target_include_directories(photog_generator
         INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"

@@ -6,8 +6,8 @@
 #include "halide_image_io.h"
 #include "HalideBuffer.h"
 
+#include "photog_color.h"
 // Available after a CMake build
-#include "color.h"
 #include "photog_srgb_to_linear.h"
 #include "photog_srgb_to_xyz.h"
 #include "photog_rgb_to_xyz.h"

@@ -1,6 +1,6 @@
 add_subdirectory(generator)
 
-add_library(photog_color color.cpp color.h)
+add_library(photog_color photog_color.cpp photog_color.h)
 target_include_directories(photog_color
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
@@ -10,7 +10,7 @@ target_link_libraries(photog_color
         PRIVATE photog_generator)
 
 # color.cpp generators
-add_executable(color.generators color.cpp color.h)
+add_executable(color.generators photog_color.cpp photog_color.h)
 target_link_libraries(color.generators
         PRIVATE Halide::Generator photog_generator)
 

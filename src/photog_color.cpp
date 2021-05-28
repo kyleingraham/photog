@@ -1,8 +1,8 @@
 #include <array>
 #include <map>
 
-#include "color.h"
-#include "generator.h"
+#include "photog_color.h"
+#include "photog_generator.h"
 
 namespace photog {
     Halide::Expr srgb_to_linear(const Halide::Expr &channel) {
