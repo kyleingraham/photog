@@ -7,7 +7,7 @@
 
 namespace photog {
     template<class T>
-    class generator : public Halide::Generator<T> {
+    class Generator : public Halide::Generator<T> {
     protected:
         Halide::GeneratorParam<bool> manual_schedule{"manual_schedule", false};
         // Use these parameters for external control of auto-scheduling estimates.
@@ -26,7 +26,7 @@ namespace photog {
                 schedule_manual();
             } else {
                 std::cerr
-                        << "photog::generator::schedule(): One of auto_schedule and manual_schedule need to be set to true."
+                        << "photog::Generator::schedule(): One of auto_schedule and manual_schedule need to be set to true."
                         << std::endl;
                 abort();
             }
@@ -35,7 +35,7 @@ namespace photog {
         /** Override to specify auto-schedule estimates. Called when auto_schedule=true.*/
         virtual void schedule_auto() {
             std::cerr
-                    << "photog::generator::schedule_auto() override required when auto_schedule is true."
+                    << "photog::Generator::schedule_auto() override required when auto_schedule is true."
                     << std::endl;
             abort();
         }
@@ -43,7 +43,7 @@ namespace photog {
         /** Override to specify a manual schedule. Called when manual_schedule=true.*/
         virtual void schedule_manual() {
             std::cerr
-                    << "photog::generator::schedule_manual() override required when manual_schedule is true."
+                    << "photog::Generator::schedule_manual() override required when manual_schedule is true."
                     << std::endl;
             abort();
         }

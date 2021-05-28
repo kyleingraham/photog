@@ -1,4 +1,4 @@
-# photog generator library
+# photog Generator library
 add_library(photog_generator INTERFACE)
 target_sources(photog_generator INTERFACE generator.h)
 target_include_directories(photog_generator
@@ -7,5 +7,5 @@ target_include_directories(photog_generator
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>") # TODO: Revisit when configuring installation.
 if (APPLE)
     target_link_libraries(photog_generator
-            INTERFACE Halide::Halide)
+            INTERFACE Halide::Generator)
 endif ()
