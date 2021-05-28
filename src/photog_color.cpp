@@ -46,20 +46,22 @@ static XfmrMap rgb_to_xyz_xfmrs{
                         0.0193339f, 0.1191920f, 0.9503041f}}
 };
 
+namespace photog {
+    Halide::Runtime::Buffer<float>
+    get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
+        // TODO: What are the ownership considerations here?
+        return Halide::Runtime::Buffer<float>(
+                rgb_to_xyz_xfmrs.at(working_space).data(),
+                {3, 3});
+    }
+}
+
 halide_buffer_t *photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
     // TODO: What are the ownership considerations here?
-    return Halide::Runtime::Buffer<float>(
-            rgb_to_xyz_xfmrs.at(working_space).data(), {3, 3}).raw_buffer();
+    return photog::get_rgb_to_xyz_xfmr(working_space).raw_buffer();
 }
 
 namespace photog {
-    Halide::Buffer<float>
-    get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
-        // TODO: What are the ownership considerations here?
-        return Halide::Buffer<float>(rgb_to_xyz_xfmrs.at(working_space).data(),
-                                     {3, 3});
-    }
-
     class SrgbToXyz : public photog::Generator<SrgbToXyz> {
     public:
         Input <Func> srgb{"srgb", Float(32), 3};
