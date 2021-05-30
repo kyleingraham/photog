@@ -10,10 +10,7 @@ target_link_libraries(tests
         PRIVATE
         doctest::doctest
         Halide::Tools
-        photog_color # use color here instead?
-        photog_srgb_to_linear
-        photog_srgb_to_xyz
-        photog_rgb_to_xyz) # linking add_halide_library output brings in headers and libraries
+        color) # linking any add_halide_library target brings in its headers and libraries
 
 ## Linking for JPEG/PNG libraries is different between OS's
 if (APPLE)

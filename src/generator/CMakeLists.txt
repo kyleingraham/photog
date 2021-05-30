@@ -1,6 +1,5 @@
 # photog_generator library (photog::photog_generator target)
 add_library(generator INTERFACE)
-message(${CMAKE_CURRENT_SOURCE_DIR})
 target_sources(generator
         INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/photog_generator.h>"
