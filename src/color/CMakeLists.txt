@@ -37,7 +37,7 @@ target_include_directories(photog_color
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/photog>")
 target_link_libraries(photog_color
-        PUBLIC Halide::Runtime
+        PUBLIC Halide::Runtime # TODO: Do we need this public link?
         PRIVATE generator)
 set_target_properties(photog_color PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/photog_color.h) # allows use of global install settings
 
