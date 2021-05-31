@@ -1,7 +1,5 @@
 # define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
-#include <string>
-
 #include "doctest/doctest.h"
 #include "halide_image_io.h"
 #include "HalideBuffer.h"
@@ -11,6 +9,7 @@
 #include "photog_srgb_to_linear.h"
 #include "photog_srgb_to_xyz.h"
 #include "photog_rgb_to_xyz.h"
+#include "photog_linear_to_srgb.h"
 
 TEST_CASE ("testing photog_srgb_to_linear") {
     std::string file_path = R"(images/rgb.jpg)";
@@ -69,4 +68,28 @@ TEST_CASE ("testing photog_rgb_to_xyz") {
             CHECK(output(1824, 445, 0) == doctest::Approx(0.002775f));
             CHECK(output(1824, 445, 1) == doctest::Approx(0.002991f));
             CHECK(output(1824, 445, 2) == doctest::Approx(0.002728f));
+}
+
+TEST_CASE ("testing photog_linear_to_srgb") {
+    std::string file_path = R"(images/rgb.jpg)";
+    Halide::Runtime::Buffer<float> input =
+            Halide::Tools::load_and_convert_image(file_path);
+    Halide::Runtime::Buffer<float> linear =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_srgb_to_linear(input, linear);
+
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_linear_to_srgb(linear, output);
+
+    // 0.0031308f < input(x, y, c)
+            CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
+            CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
+            CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
+    // input(x, y, c) <= 0.0031308f
+            CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
+            CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
+            CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }

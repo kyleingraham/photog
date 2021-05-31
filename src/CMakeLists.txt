@@ -14,6 +14,7 @@ install(TARGETS
         photog_srgb_to_linear.runtime
         photog_srgb_to_xyz
         photog_rgb_to_xyz
+        photog_linear_to_srgb
         EXPORT photog_targets
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/photog
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/photog

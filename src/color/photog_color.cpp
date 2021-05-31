@@ -35,6 +35,37 @@ namespace photog {
                                   {0, C}});
         }
     };
+
+    Halide::Expr linear_to_srgb(const Halide::Expr &channel) {
+        return Halide::select(channel <= 0.0031308f,
+                              channel * 12.92f,
+                              (1.055f * Halide::pow(channel,
+                                                    1 / 2.4f)) - 0.055f);
+    }
+
+    class LinearToSrgb : public photog::Generator<LinearToSrgb> {
+    public:
+        Input <Func> linear{"linear", Float(32), 3};
+        Output <Func> srgb{"srgb", Float(32), 3};
+
+        Var x{"x"}, y{"y"}, c{"c"};
+
+        void generate() {
+            srgb(x, y, c) = photog::linear_to_srgb(linear(x, y, c));
+        }
+
+        void schedule_auto() override {
+            const int X{x_max}, Y{y_max}, C{3};
+
+            linear.set_estimate(linear.args()[0], 0, X);
+            linear.set_estimate(linear.args()[1], 0, Y);
+            linear.set_estimate(linear.args()[2], 0, C);
+
+            srgb.set_estimates({{0, X},
+                                {0, Y},
+                                {0, C}});
+        }
+    };
 } // namespace photog
 
 typedef std::map<PhotogWorkingSpace, std::array<float, 9>> XfmrMap;
@@ -127,3 +158,4 @@ namespace photog {
 HALIDE_REGISTER_GENERATOR(photog::SrgbToLinear, photog_srgb_to_linear);
 HALIDE_REGISTER_GENERATOR(photog::SrgbToXyz, photog_srgb_to_xyz);
 HALIDE_REGISTER_GENERATOR(photog::RgbToXyz, photog_rgb_to_xyz);
+HALIDE_REGISTER_GENERATOR(photog::LinearToSrgb, photog_linear_to_srgb);

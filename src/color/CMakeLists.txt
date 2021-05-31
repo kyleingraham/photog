@@ -12,6 +12,7 @@ add_halide_library(photog_srgb_to_linear FROM color.generators
         HEADER photog_srgb_to_linear_header)
 set_target_properties(photog_srgb_to_linear PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_srgb_to_linear_header})
 
+# TODO: Can I define these programmatically?
 add_halide_library(photog_srgb_to_xyz FROM color.generators
         GENERATOR photog_srgb_to_xyz
         USE_RUNTIME photog_srgb_to_linear.runtime
@@ -29,6 +30,15 @@ add_halide_library(photog_rgb_to_xyz FROM color.generators
         SCHEDULE photog_rgb_to_xyz_schedule
         HEADER photog_rgb_to_xyz_header)
 set_target_properties(photog_rgb_to_xyz PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_rgb_to_xyz_header})
+
+add_halide_library(photog_linear_to_srgb FROM color.generators
+        GENERATOR photog_linear_to_srgb
+        USE_RUNTIME photog_srgb_to_linear.runtime
+        AUTOSCHEDULER Halide::Adams2019
+        PARAMS auto_schedule=true
+        SCHEDULE photog_linear_to_srgb_schedule
+        HEADER photog_linear_to_srgb_header)
+set_target_properties(photog_linear_to_srgb PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_linear_to_srgb_header})
 
 # photog_color library (photog::photo_color target)
 add_library(photog_color photog_color.cpp photog_color.h)
@@ -49,4 +59,5 @@ target_link_libraries(color
         photog_srgb_to_linear
         photog_srgb_to_linear.runtime
         photog_srgb_to_xyz
-        photog_rgb_to_xyz)
+        photog_rgb_to_xyz
+        photog_linear_to_srgb)
