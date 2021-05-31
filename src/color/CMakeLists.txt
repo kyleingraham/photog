@@ -40,6 +40,24 @@ add_halide_library(photog_linear_to_srgb FROM color.generators
         HEADER photog_linear_to_srgb_header)
 set_target_properties(photog_linear_to_srgb PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_linear_to_srgb_header})
 
+add_halide_library(photog_xyz_to_srgb FROM color.generators
+        GENERATOR photog_xyz_to_srgb
+        USE_RUNTIME photog_srgb_to_linear.runtime
+        AUTOSCHEDULER Halide::Adams2019
+        PARAMS auto_schedule=true
+        SCHEDULE photog_xyz_to_srgb_schedule
+        HEADER photog_xyz_to_srgb_header)
+set_target_properties(photog_xyz_to_srgb PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_xyz_to_srgb_header})
+
+add_halide_library(photog_xyz_to_rgb FROM color.generators
+        GENERATOR photog_xyz_to_rgb
+        USE_RUNTIME photog_srgb_to_linear.runtime
+        AUTOSCHEDULER Halide::Adams2019
+        PARAMS auto_schedule=true
+        SCHEDULE photog_xyz_to_rgb_schedule
+        HEADER photog_xyz_to_rgb_header)
+set_target_properties(photog_xyz_to_rgb PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_xyz_to_rgb_header})
+
 # photog_color library (photog::photo_color target)
 add_library(photog_color photog_color.cpp photog_color.h)
 target_include_directories(photog_color
@@ -60,4 +78,6 @@ target_link_libraries(color
         photog_srgb_to_linear.runtime
         photog_srgb_to_xyz
         photog_rgb_to_xyz
-        photog_linear_to_srgb)
+        photog_linear_to_srgb
+        photog_xyz_to_srgb
+        photog_xyz_to_rgb)

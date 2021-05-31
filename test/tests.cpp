@@ -10,6 +10,8 @@
 #include "photog_srgb_to_xyz.h"
 #include "photog_rgb_to_xyz.h"
 #include "photog_linear_to_srgb.h"
+#include "photog_xyz_to_srgb.h"
+#include "photog_xyz_to_rgb.h"
 
 TEST_CASE ("testing photog_srgb_to_linear") {
     std::string file_path = R"(images/rgb.jpg)";
@@ -83,6 +85,55 @@ TEST_CASE ("testing photog_linear_to_srgb") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_linear_to_srgb(linear, output);
+
+    // 0.0031308f < input(x, y, c)
+            CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
+            CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
+            CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
+    // input(x, y, c) <= 0.0031308f
+            CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
+            CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
+            CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
+}
+
+TEST_CASE ("testing photog_xyz_to_srgb") {
+    std::string file_path = R"(images/rgb.jpg)";
+    Halide::Runtime::Buffer<float> input =
+            Halide::Tools::load_and_convert_image(file_path);
+    Halide::Runtime::Buffer<float> xyz =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_srgb_to_xyz(input, xyz);
+
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_xyz_to_srgb(xyz, output);
+
+    // 0.0031308f < input(x, y, c)
+            CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
+            CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
+            CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
+    // input(x, y, c) <= 0.0031308f
+            CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
+            CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
+            CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
+}
+
+TEST_CASE ("testing photog_xyz_to_rgb") {
+    std::string file_path = R"(images/rgb.jpg)";
+    Halide::Runtime::Buffer<float> input =
+            Halide::Tools::load_and_convert_image(file_path);
+    Halide::Runtime::Buffer<float> xyz =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_srgb_to_xyz(input, xyz);
+
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_xyz_to_rgb(xyz, photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace::srgb),
+                      output);
 
     // 0.0031308f < input(x, y, c)
             CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));

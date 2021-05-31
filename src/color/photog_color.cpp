@@ -77,19 +77,39 @@ static XfmrMap rgb_to_xyz_xfmrs{
                         0.0193339f, 0.1191920f, 0.9503041f}}
 };
 
+static XfmrMap xyz_to_rgb_xfmrs{
+        {PhotogWorkingSpace::srgb,
+                {3.2404542f, -1.5371385f, -0.4985314f,
+                        -0.9692660f, 1.8760108f, 0.0415560f,
+                        0.0556434f, -0.2040259f, 1.0572252f}}
+};
+
 namespace photog {
     Halide::Runtime::Buffer<float>
     get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
-        // TODO: What are the ownership considerations here?
+        // TODO: What are the ownership considerations here? Copied by value?
         return Halide::Runtime::Buffer<float>(
                 rgb_to_xyz_xfmrs.at(working_space).data(),
+                {3, 3});
+    }
+
+    Halide::Runtime::Buffer<float>
+    get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space) {
+        // TODO: What are the ownership considerations here? Copied by value?
+        return Halide::Runtime::Buffer<float>(
+                xyz_to_rgb_xfmrs.at(working_space).data(),
                 {3, 3});
     }
 } // namespace photog
 
 halide_buffer_t *photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
-    // TODO: What are the ownership considerations here?
+    // TODO: What are the ownership considerations here? Copied by value?
     return photog::get_rgb_to_xyz_xfmr(working_space).raw_buffer();
+}
+
+halide_buffer_t *photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space) {
+    // TODO: What are the ownership considerations here? Copied by value?
+    return photog::get_xyz_to_rgb_xfmr(working_space).raw_buffer();
 }
 
 namespace photog {
@@ -126,7 +146,7 @@ namespace photog {
     class RgbToXyz : public photog::Generator<RgbToXyz> {
     public:
         Input <Func> rgb{"rgb", Float(32), 3};
-        Input <Buffer<float>> rgb_to_xyz_xfmr{"rgb_to_xyz_xfmr", 2};
+        Input <Buffer<float>> rgb_to_xyz_xfmr{"xyz_to_rgb_xfmr", 2};
         Output <Func> xyz{"xyz", Float(32), 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
@@ -151,11 +171,71 @@ namespace photog {
                                {0, C}});
         }
     };
+
+    class XyzToSrgb : public photog::Generator<XyzToSrgb> {
+    public:
+        Input <Func> xyz{"xyz", Float(32), 3};
+        Output <Func> srgb{"srgb", Float(32), 3};
+
+        Var x{"x"}, y{"y"}, c{"c"};
+        Func linear{"linear"};
+
+        void generate() {
+            Halide::Buffer<float> xyz_to_rgb_xfmr =
+                    photog::get_xyz_to_rgb_xfmr(PhotogWorkingSpace::srgb);
+            linear(x, y, c) = xyz_to_rgb_xfmr(0, c) * xyz(x, y, 0) +
+                              xyz_to_rgb_xfmr(1, c) * xyz(x, y, 1) +
+                              xyz_to_rgb_xfmr(2, c) * xyz(x, y, 2);
+            srgb(x, y, c) = photog::linear_to_srgb(linear(x, y, c));
+        }
+
+        void schedule_auto() override {
+            const int X{x_max}, Y{y_max}, C{3};
+
+            xyz.set_estimate(xyz.args()[0], 0, X);
+            xyz.set_estimate(xyz.args()[1], 0, Y);
+            xyz.set_estimate(xyz.args()[2], 0, C);
+
+            srgb.set_estimates({{0, X},
+                                {0, Y},
+                                {0, C}});
+        }
+    };
+
+    class XyzToRgb : public photog::Generator<XyzToRgb> {
+    public:
+        Input <Func> xyz{"xyz", Float(32), 3};
+        Input <Buffer<float>> xyz_to_rgb_xfmr{"xyz_to_rgb_xfmr", 2};
+        Output <Func> rgb{"rgb", Float(32), 3};
+
+        Var x{"x"}, y{"y"}, c{"c"};
+        Func linear{"linear"};
+
+        void generate() {
+            linear(x, y, c) = xyz_to_rgb_xfmr(0, c) * xyz(x, y, 0) +
+                              xyz_to_rgb_xfmr(1, c) * xyz(x, y, 1) +
+                              xyz_to_rgb_xfmr(2, c) * xyz(x, y, 2);
+            rgb(x, y, c) = photog::linear_to_srgb(linear(x, y, c));
+        }
+
+        void schedule_auto() override {
+            const int X{x_max}, Y{y_max}, C{3};
+
+            xyz.set_estimate(xyz.args()[0], 0, X);
+            xyz.set_estimate(xyz.args()[1], 0, Y);
+            xyz.set_estimate(xyz.args()[2], 0, C);
+
+            rgb.set_estimates({{0, X},
+                               {0, Y},
+                               {0, C}});
+        }
+    };
 } // namespace photog
 
-// TODO: Can we make these functions part of the API? Better to make generators available?
 // TODO: What is the third argument used for? Stubs and Generator composing?
 HALIDE_REGISTER_GENERATOR(photog::SrgbToLinear, photog_srgb_to_linear);
 HALIDE_REGISTER_GENERATOR(photog::SrgbToXyz, photog_srgb_to_xyz);
 HALIDE_REGISTER_GENERATOR(photog::RgbToXyz, photog_rgb_to_xyz);
 HALIDE_REGISTER_GENERATOR(photog::LinearToSrgb, photog_linear_to_srgb);
+HALIDE_REGISTER_GENERATOR(photog::XyzToSrgb, photog_xyz_to_srgb);
+HALIDE_REGISTER_GENERATOR(photog::XyzToRgb, photog_xyz_to_rgb);
