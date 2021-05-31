@@ -25,5 +25,3 @@ doctest_discover_tests(tests)
 ## Copy non-source test files to test executable working directory
 ## This approach uses more disk space but prevents modification to test files
 file(COPY ${CMAKE_SOURCE_DIR}/test/images DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-add_subdirectory(benchmarks)
