@@ -70,26 +70,26 @@ namespace photog {
 
 typedef std::map<PhotogWorkingSpace, std::array<float, 9>> XfmrMap;
 
-static XfmrMap rgb_to_xyz_xfmrs{
-        {PhotogWorkingSpace::srgb,
-                {0.4124564f, 0.3575761f, 0.1804375f,
-                        0.2126729f, 0.7151522f, 0.0721750f,
-                        0.0193339f, 0.1191920f, 0.9503041f}}
-};
-
-static XfmrMap xyz_to_rgb_xfmrs{
-        {PhotogWorkingSpace::srgb,
-                {3.2404542f, -1.5371385f, -0.4985314f,
-                        -0.9692660f, 1.8760108f, 0.0415560f,
-                        0.0556434f, -0.2040259f, 1.0572252f}}
-};
-
 namespace photog {
+    static XfmrMap rgb_to_xyz_xfmrs{
+            {PhotogWorkingSpace::srgb,
+                    {0.4124564f, 0.3575761f, 0.1804375f,
+                            0.2126729f, 0.7151522f, 0.0721750f,
+                            0.0193339f, 0.1191920f, 0.9503041f}}
+    };
+
+    static XfmrMap xyz_to_rgb_xfmrs{
+            {PhotogWorkingSpace::srgb,
+                    {3.2404542f, -1.5371385f, -0.4985314f,
+                            -0.9692660f, 1.8760108f, 0.0415560f,
+                            0.0556434f, -0.2040259f, 1.0572252f}}
+    };
+
     Halide::Runtime::Buffer<float>
     get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
         // TODO: What are the ownership considerations here? Copied by value?
         return Halide::Runtime::Buffer<float>(
-                rgb_to_xyz_xfmrs.at(working_space).data(),
+                photog::rgb_to_xyz_xfmrs.at(working_space).data(),
                 {3, 3});
     }
 
@@ -97,7 +97,7 @@ namespace photog {
     get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space) {
         // TODO: What are the ownership considerations here? Copied by value?
         return Halide::Runtime::Buffer<float>(
-                xyz_to_rgb_xfmrs.at(working_space).data(),
+                photog::xyz_to_rgb_xfmrs.at(working_space).data(),
                 {3, 3});
     }
 } // namespace photog
