@@ -4,6 +4,9 @@
 #include "photog_color.h"
 #include "photog_generator.h"
 
+typedef std::map<PhotogWorkingSpace, std::array<float, 9>> XfmrMap;
+typedef std::map<PhotogWorkingSpace, float> GammaMap;
+
 namespace photog {
     Halide::Expr srgb_to_linear(const Halide::Expr &channel) {
         return Halide::select(channel <= 0.04045f,
@@ -66,9 +69,77 @@ namespace photog {
                                 {0, C}});
         }
     };
+
+    Halide::Expr
+    rgb_to_linear(const Halide::Expr &channel, const Halide::Expr &gamma) {
+        return Halide::pow(channel, gamma);
+    }
+
+    class RgbToLinear : public photog::Generator<RgbToLinear> {
+    public:
+        Input <Func> rgb{"rgb", Float(32), 3};
+        Input<float> gamma{"gamma"};
+        Output <Func> linear{"linear", Float(32), 3};
+
+        Var x{"x"}, y{"y"}, c{"c"};
+
+        void generate() {
+            linear(x, y, c) = photog::rgb_to_linear(rgb(x, y, c), gamma);
+        }
+
+        void schedule_auto() override {
+            const int X{x_max}, Y{y_max}, C{3};
+
+            rgb.set_estimate(rgb.args()[0], 0, X);
+            rgb.set_estimate(rgb.args()[1], 0, Y);
+            rgb.set_estimate(rgb.args()[2], 0, C);
+
+            gamma.set_estimate(2.2);
+
+            linear.set_estimates({{0, X},
+                                  {0, Y},
+                                  {0, C}});
+        }
+    };
+
+    Halide::Expr
+    linear_to_rgb(const Halide::Expr &channel, const Halide::Expr &gamma) {
+        return Halide::pow(channel, 1 / gamma);
+    }
+
+    class LinearToRgb : public photog::Generator<LinearToRgb> {
+    public:
+        Input <Func> linear{"linear", Float(32), 3};
+        Input<float> gamma{"gamma"};
+        Output <Func> rgb{"rgb", Float(32), 3};
+
+        Var x{"x"}, y{"y"}, c{"c"};
+
+        void generate() {
+            rgb(x, y, c) = photog::linear_to_rgb(linear(x, y, c), gamma);
+        }
+
+        void schedule_auto() override {
+            const int X{x_max}, Y{y_max}, C{3};
+
+            linear.set_estimate(linear.args()[0], 0, X);
+            linear.set_estimate(linear.args()[1], 0, Y);
+            linear.set_estimate(linear.args()[2], 0, C);
+
+            gamma.set_estimate(2.2);
+
+            rgb.set_estimates({{0, X},
+                               {0, Y},
+                               {0, C}});
+        }
+    };
+
+    GammaMap working_space_gammas{{PhotogWorkingSpace::srgb, 2.2}};
 } // namespace photog
 
-typedef std::map<PhotogWorkingSpace, std::array<float, 9>> XfmrMap;
+float photog_get_working_space_gamma(PhotogWorkingSpace working_space) {
+    return photog::working_space_gammas.at(working_space);
+}
 
 namespace photog {
     static XfmrMap rgb_to_xyz_xfmrs{
@@ -146,6 +217,7 @@ namespace photog {
     class RgbToXyz : public photog::Generator<RgbToXyz> {
     public:
         Input <Func> rgb{"rgb", Float(32), 3};
+        Input<float> gamma{"gamma"};
         Input <Buffer<float>> rgb_to_xyz_xfmr{"xyz_to_rgb_xfmr", 2};
         Output <Func> xyz{"xyz", Float(32), 3};
 
@@ -153,7 +225,7 @@ namespace photog {
         Func linear{"linear"};
 
         void generate() {
-            linear(x, y, c) = photog::srgb_to_linear(rgb(x, y, c));
+            linear(x, y, c) = photog::rgb_to_linear(rgb(x, y, c), gamma);
             xyz(x, y, c) = rgb_to_xyz_xfmr(0, c) * linear(x, y, 0) +
                            rgb_to_xyz_xfmr(1, c) * linear(x, y, 1) +
                            rgb_to_xyz_xfmr(2, c) * linear(x, y, 2);
@@ -165,6 +237,8 @@ namespace photog {
             rgb.set_estimate(rgb.args()[0], 0, X);
             rgb.set_estimate(rgb.args()[1], 0, Y);
             rgb.set_estimate(rgb.args()[2], 0, C);
+
+            gamma.set_estimate(2.2);
 
             xyz.set_estimates({{0, X},
                                {0, Y},
@@ -205,6 +279,7 @@ namespace photog {
     class XyzToRgb : public photog::Generator<XyzToRgb> {
     public:
         Input <Func> xyz{"xyz", Float(32), 3};
+        Input<float> gamma{"gamma"};
         Input <Buffer<float>> xyz_to_rgb_xfmr{"xyz_to_rgb_xfmr", 2};
         Output <Func> rgb{"rgb", Float(32), 3};
 
@@ -215,7 +290,7 @@ namespace photog {
             linear(x, y, c) = xyz_to_rgb_xfmr(0, c) * xyz(x, y, 0) +
                               xyz_to_rgb_xfmr(1, c) * xyz(x, y, 1) +
                               xyz_to_rgb_xfmr(2, c) * xyz(x, y, 2);
-            rgb(x, y, c) = photog::linear_to_srgb(linear(x, y, c));
+            rgb(x, y, c) = photog::linear_to_rgb(linear(x, y, c), gamma);
         }
 
         void schedule_auto() override {
@@ -224,6 +299,8 @@ namespace photog {
             xyz.set_estimate(xyz.args()[0], 0, X);
             xyz.set_estimate(xyz.args()[1], 0, Y);
             xyz.set_estimate(xyz.args()[2], 0, C);
+
+            gamma.set_estimate(2.2);
 
             rgb.set_estimates({{0, X},
                                {0, Y},
@@ -234,8 +311,10 @@ namespace photog {
 
 // TODO: What is the third argument used for? Stubs and Generator composing?
 HALIDE_REGISTER_GENERATOR(photog::SrgbToLinear, photog_srgb_to_linear);
+HALIDE_REGISTER_GENERATOR(photog::RgbToLinear, photog_rgb_to_linear);
 HALIDE_REGISTER_GENERATOR(photog::SrgbToXyz, photog_srgb_to_xyz);
 HALIDE_REGISTER_GENERATOR(photog::RgbToXyz, photog_rgb_to_xyz);
 HALIDE_REGISTER_GENERATOR(photog::LinearToSrgb, photog_linear_to_srgb);
+HALIDE_REGISTER_GENERATOR(photog::LinearToRgb, photog_linear_to_rgb);
 HALIDE_REGISTER_GENERATOR(photog::XyzToSrgb, photog_xyz_to_srgb);
 HALIDE_REGISTER_GENERATOR(photog::XyzToRgb, photog_xyz_to_rgb);

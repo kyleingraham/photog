@@ -17,6 +17,8 @@ halide_buffer_t* photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space);
 
 halide_buffer_t* photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space);
 
+float photog_get_working_space_gamma(PhotogWorkingSpace workingSpace);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

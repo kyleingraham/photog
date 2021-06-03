@@ -7,9 +7,11 @@
 #include "photog_color.h"
 // Available after a CMake build
 #include "photog_srgb_to_linear.h"
+#include "photog_rgb_to_linear.h"
 #include "photog_srgb_to_xyz.h"
 #include "photog_rgb_to_xyz.h"
 #include "photog_linear_to_srgb.h"
+#include "photog_linear_to_rgb.h"
 #include "photog_xyz_to_srgb.h"
 #include "photog_xyz_to_rgb.h"
 
@@ -30,6 +32,26 @@ TEST_CASE ("testing photog_srgb_to_linear") {
             CHECK(output(1824, 445, 0) == doctest::Approx(0.003035f));
             CHECK(output(1824, 445, 1) == doctest::Approx(0.003035f));
             CHECK(output(1824, 445, 2) == doctest::Approx(0.002428f));
+}
+
+TEST_CASE ("testing photog_rgb_to_linear") {
+    std::string file_path = R"(images/rgb.jpg)";
+    Halide::Runtime::Buffer<float> input =
+            Halide::Tools::load_and_convert_image(file_path);
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_rgb_to_linear(input, photog_get_working_space_gamma(
+            PhotogWorkingSpace::srgb), output);
+
+    // 0.04045f < input(x, y, c)
+            CHECK(output(0, 0, 0) == doctest::Approx(0.431340f));
+            CHECK(output(0, 0, 1) == doctest::Approx(0.348865f));
+            CHECK(output(0, 0, 2) == doctest::Approx(0.197516f));
+    // input(x, y, c) <= 0.04045f
+            CHECK(output(1824, 445, 0) == doctest::Approx(0.000804f));
+            CHECK(output(1824, 445, 1) == doctest::Approx(0.000804f));
+            CHECK(output(1824, 445, 2) == doctest::Approx(0.000492f));
 }
 
 TEST_CASE ("testing photog_srgb_to_xyz") {
@@ -59,17 +81,18 @@ TEST_CASE ("testing photog_rgb_to_xyz") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_rgb_to_xyz(input,
+                      photog_get_working_space_gamma(PhotogWorkingSpace::srgb),
                       photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace::srgb),
                       output);
 
     // 0.04045f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(0.331956f));
-            CHECK(output(0, 0, 1) == doctest::Approx(0.348585f));
-            CHECK(output(0, 0, 2) == doctest::Approx(0.233883f));
+            CHECK(output(0, 0, 0) == doctest::Approx(0.338294f));
+            CHECK(output(0, 0, 1) == doctest::Approx(0.355482f));
+            CHECK(output(0, 0, 2) == doctest::Approx(0.237622f));
     // input(x, y, c) <= 0.04045f
-            CHECK(output(1824, 445, 0) == doctest::Approx(0.002775f));
-            CHECK(output(1824, 445, 1) == doctest::Approx(0.002991f));
-            CHECK(output(1824, 445, 2) == doctest::Approx(0.002728f));
+            CHECK(output(1824, 445, 0) == doctest::Approx(0.000708f));
+            CHECK(output(1824, 445, 1) == doctest::Approx(0.000782f));
+            CHECK(output(1824, 445, 2) == doctest::Approx(0.000580f));
 }
 
 TEST_CASE ("testing photog_linear_to_srgb") {
@@ -85,6 +108,32 @@ TEST_CASE ("testing photog_linear_to_srgb") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_linear_to_srgb(linear, output);
+
+    // 0.0031308f < input(x, y, c)
+            CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
+            CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
+            CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
+    // input(x, y, c) <= 0.0031308f
+            CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
+            CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
+            CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
+}
+
+TEST_CASE ("testing photog_linear_to_rgb") {
+    std::string file_path = R"(images/rgb.jpg)";
+    Halide::Runtime::Buffer<float> input =
+            Halide::Tools::load_and_convert_image(file_path);
+    Halide::Runtime::Buffer<float> linear =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_rgb_to_linear(input, photog_get_working_space_gamma(
+            PhotogWorkingSpace::srgb), linear);
+
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+
+    photog_linear_to_rgb(linear, photog_get_working_space_gamma(
+            PhotogWorkingSpace::srgb), output);
 
     // 0.0031308f < input(x, y, c)
             CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
@@ -127,12 +176,17 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
     Halide::Runtime::Buffer<float> xyz =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
-    photog_srgb_to_xyz(input, xyz);
+    photog_rgb_to_xyz(input,
+                      photog_get_working_space_gamma(PhotogWorkingSpace::srgb),
+                      photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace::srgb),
+                      xyz);
 
     Halide::Runtime::Buffer<float> output =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
-    photog_xyz_to_rgb(xyz, photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace::srgb),
+    photog_xyz_to_rgb(xyz,
+                      photog_get_working_space_gamma(PhotogWorkingSpace::srgb),
+                      photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace::srgb),
                       output);
 
     // 0.0031308f < input(x, y, c)

@@ -12,9 +12,11 @@ install(TARGETS
         generator
         photog_srgb_to_linear
         photog_srgb_to_linear.runtime
+        photog_rgb_to_linear
         photog_srgb_to_xyz
         photog_rgb_to_xyz
         photog_linear_to_srgb
+        photog_linear_to_rgb
         photog_xyz_to_srgb
         photog_xyz_to_rgb
         EXPORT photog_targets
