@@ -8,25 +8,40 @@ typedef std::map<PhotogWorkingSpace, std::array<float, 9>> XfmrMap;
 typedef std::map<PhotogWorkingSpace, float> GammaMap;
 
 namespace photog {
-    /** Calculates average pixel value for an image with channels in the range
-     * 0-1.*/
+    /** Calculates average pixel value for an image.*/
+    Halide::Func
+    average(const Halide::Func &image, const Halide::Type &image_type,
+            const Halide::Expr &width, const Halide::Expr &height,
+            const Halide::Expr &channels) {
+        Halide::Func average{"func_average"}, sum{"func_sum"};
+        Halide::Var c{"func_c"};
+        Halide::RDom r{0, width, 0, height};
+        Halide::Type narrow = image_type;
+        Halide::Type wide;
+
+        if (image_type.bits() != 64)
+            wide = image_type.widen();
+        else
+            wide = narrow;
+
+        sum(c) = Halide::cast(wide, 0);
+        sum(c) = Halide::sum(Halide::cast(wide, image(r.x, r.y, c)));
+        average(c) = Halide::cast(narrow, sum(c) / (width * height * channels));
+        return average;
+    }
+
     class Average : public photog::Generator<Average> {
     public:
-        // TODO: Explore generic code for this algo i.e. accept Buffer<>
+        // TODO: How do we vary type for testing?
         Input <Buffer<float>> input{"input", 3};
         Output <Buffer<float>> average{"average", 1};
 
         Var x{"x"}, y{"y"}, c{"c"};
 
         void generate() {
-            // TODO: Auto-scheduling limits to a single core here
-            Func sum{"sum"};
-            RDom r{0, input.width(), 0, input.height()};
-            sum(c) = Halide::cast<double>(0);
-            sum(c) = Halide::sum(Halide::cast<double>(input(r.x, r.y, c)));
-            average(c) = Halide::cast<float>(sum(c) /
-                                             (input.width() * input.height() *
-                                              input.channels()));
+            // TODO: Auto-scheduling limits to a single core here. Use atomic to parallelize?
+            average(c) = photog::average(input, input.type(), input.width(),
+                                         input.height(), input.channels())(c);
         }
 
         void schedule_auto() override {
@@ -49,6 +64,8 @@ namespace photog {
 
     class SrgbToLinear : public photog::Generator<SrgbToLinear> {
     public:
+        // TODO: Can we avoid explicit typing here?
+        // TODO: How do we handle 4-channel images?
         Input <Func> srgb{"srgb", Float(32), 3};
         Output <Func> linear{"linear", Float(32), 3};
 

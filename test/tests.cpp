@@ -201,6 +201,7 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
 }
 
 TEST_CASE ("testing photog_average") {
+    // TODO: Add test for 64-bit input.
     std::string file_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             Halide::Tools::load_and_convert_image(file_path);
