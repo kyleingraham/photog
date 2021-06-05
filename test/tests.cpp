@@ -14,6 +14,7 @@
 #include "photog_linear_to_rgb.h"
 #include "photog_xyz_to_srgb.h"
 #include "photog_xyz_to_rgb.h"
+#include "photog_average.h"
 
 TEST_CASE ("testing photog_srgb_to_linear") {
     std::string file_path = R"(images/rgb.jpg)";
@@ -197,4 +198,46 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
             CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
             CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
             CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
+}
+
+TEST_CASE ("testing photog_average") {
+    std::string file_path = R"(images/rgb.jpg)";
+    Halide::Runtime::Buffer<float> input =
+            Halide::Tools::load_and_convert_image(file_path);
+    Halide::Runtime::Buffer<float> output{input.channels()};
+
+    photog_average(input, output);
+
+    // Reference: Kahan summation algorithm using float values
+    float sums[3]{0};
+    float c[3]{0};
+    for (int x = 0; x < input.width(); ++x) {
+        for (int y = 0; y < input.height(); ++y) {
+            float z[3]{0};
+            float t[3]{0};
+            z[0] = input(x, y, 0) - c[0];
+            z[1] = input(x, y, 1) - c[1];
+            z[2] = input(x, y, 2) - c[2];
+            t[0] = sums[0] + z[0];
+            t[1] = sums[1] + z[1];
+            t[2] = sums[2] + z[2];
+            c[0] = (t[0] - sums[0]) - z[0];
+            c[1] = (t[1] - sums[1]) - z[1];
+            c[2] = (t[2] - sums[2]) - z[2];
+            sums[0] = t[0];
+            sums[1] = t[1];
+            sums[2] = t[2];
+        }
+    }
+
+    float averages[3]{0};
+    int i{0};
+    for (auto &sum:sums) {
+        averages[i] = sum / input.number_of_elements();
+        ++i;
+    }
+
+            CHECK(averages[0] == doctest::Approx(output(0)));
+            CHECK(averages[1] == doctest::Approx(output(1)));
+            CHECK(averages[2] == doctest::Approx(output(2)));
 }

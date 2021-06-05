@@ -8,6 +8,38 @@ typedef std::map<PhotogWorkingSpace, std::array<float, 9>> XfmrMap;
 typedef std::map<PhotogWorkingSpace, float> GammaMap;
 
 namespace photog {
+    /** Calculates average pixel value for an image with channels in the range
+     * 0-1.*/
+    class Average : public photog::Generator<Average> {
+    public:
+        // TODO: Explore generic code for this algo i.e. accept Buffer<>
+        Input <Buffer<float>> input{"input", 3};
+        Output <Buffer<float>> average{"average", 1};
+
+        Var x{"x"}, y{"y"}, c{"c"};
+
+        void generate() {
+            // TODO: Auto-scheduling limits to a single core here
+            Func sum{"sum"};
+            RDom r{0, input.width(), 0, input.height()};
+            sum(c) = Halide::cast<double>(0);
+            sum(c) = Halide::sum(Halide::cast<double>(input(r.x, r.y, c)));
+            average(c) = Halide::cast<float>(sum(c) /
+                                             (input.width() * input.height() *
+                                              input.channels()));
+        }
+
+        void schedule_auto() override {
+            const int X{x_max}, Y{y_max}, C{3};
+
+            input.set_estimates({{0, X},
+                                 {0, Y},
+                                 {0, C}});
+
+            average.set_estimates({{0, C}});
+        }
+    };
+
     Halide::Expr srgb_to_linear(const Halide::Expr &channel) {
         return Halide::select(channel <= 0.04045f,
                               channel / 12.92f,
@@ -318,3 +350,4 @@ HALIDE_REGISTER_GENERATOR(photog::LinearToSrgb, photog_linear_to_srgb);
 HALIDE_REGISTER_GENERATOR(photog::LinearToRgb, photog_linear_to_rgb);
 HALIDE_REGISTER_GENERATOR(photog::XyzToSrgb, photog_xyz_to_srgb);
 HALIDE_REGISTER_GENERATOR(photog::XyzToRgb, photog_xyz_to_rgb);
+HALIDE_REGISTER_GENERATOR(photog::Average, photog_average);

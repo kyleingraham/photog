@@ -14,6 +14,7 @@ set_target_properties(photog_srgb_to_linear
         PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_srgb_to_linear_header})
 
 # TODO: Can I define these programmatically?
+# TODO: Can we add optimization flags to these with target properties?
 add_halide_library(photog_srgb_to_xyz FROM color.generators
         GENERATOR photog_srgb_to_xyz
         USE_RUNTIME photog_srgb_to_linear.runtime
@@ -84,6 +85,16 @@ add_halide_library(photog_linear_to_rgb FROM color.generators
 set_target_properties(photog_linear_to_rgb
         PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_linear_to_rgb_header})
 
+add_halide_library(photog_average FROM color.generators
+        GENERATOR photog_average
+        USE_RUNTIME photog_srgb_to_linear.runtime
+        AUTOSCHEDULER Halide::Adams2019
+        PARAMS auto_schedule=true
+        SCHEDULE photog_average_schedule
+        HEADER photog_average_header)
+set_target_properties(photog_average
+        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_average_header})
+
 # photog_color library (photog::photo_color target)
 add_library(photog_color photog_color.cpp photog_color.h)
 target_include_directories(photog_color
@@ -109,4 +120,5 @@ target_link_libraries(color
         photog_linear_to_srgb
         photog_linear_to_rgb
         photog_xyz_to_srgb
-        photog_xyz_to_rgb)
+        photog_xyz_to_rgb
+        photog_average)
