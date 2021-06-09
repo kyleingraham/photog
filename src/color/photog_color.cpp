@@ -210,10 +210,10 @@ namespace photog {
     }
 } // namespace photog
 
-float photog_get_working_space_gamma(PhotogWorkingSpace working_space) {
+float photog_get_gamma(PhotogWorkingSpace workingSpace) {
     static GammaMap gammas{{PhotogWorkingSpace::srgb, 2.2}};
 
-    return gammas.at(working_space);
+    return gammas.at(workingSpace);
 }
 
 halide_buffer_t *photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
@@ -372,7 +372,19 @@ namespace photog {
         return Halide::Buffer<float>(xfmrs.at(chromadapt_method).data(),
                                      {3, 3});
     }
+
+    Halide::Buffer<float>
+    get_tristimulus(Illuminant illuminant) {
+        static std::map<Illuminant, std::array<float, 3>> tristimuli =
+                {{Illuminant::d65, {0.95047f, 1.0f, 1.08883f}}};
+
+        return Halide::Buffer<float>(tristimuli.at(illuminant).data(), {3, 3});
+    }
 } // namespace photog
+
+halide_buffer_t* photog_get_tristimulus(Illuminant illuminant) {
+    return photog::get_tristimulus(illuminant).raw_buffer();
+}
 
 // TODO: What is the third argument used for? Stubs and Generator composing?
 HALIDE_REGISTER_GENERATOR(photog::SrgbToLinear, photog_srgb_to_linear);
