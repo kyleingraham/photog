@@ -1,7 +1,10 @@
 # photog_color.cpp generators
 add_executable(color.generators photog_color.cpp photog_color.h)
 target_link_libraries(color.generators
-        PRIVATE Halide::Generator generator)
+        PRIVATE
+        Halide::Generator
+        generator
+        utils)
 
 ## From here we create Halide libraries for each export from photog_color.cpp
 add_halide_library(photog_srgb_to_linear FROM color.generators
@@ -103,7 +106,9 @@ target_include_directories(photog_color
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/photog>")
 target_link_libraries(photog_color
         PUBLIC Halide::Runtime # TODO: Do we need this public link?
-        PRIVATE generator)
+        PRIVATE
+        generator
+        utils)
 set_target_properties(photog_color
         PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/photog_color.h) # allows use of global install settings
 

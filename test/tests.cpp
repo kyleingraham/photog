@@ -1,10 +1,13 @@
 # define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
+#include <array>
+
 #include "doctest/doctest.h"
 #include "halide_image_io.h"
 #include "HalideBuffer.h"
 
 #include "photog_color.h"
+#include "photog_utils.h"
 // Available after a CMake build
 #include "photog_srgb_to_linear.h"
 #include "photog_rgb_to_linear.h"
@@ -241,4 +244,42 @@ TEST_CASE ("testing photog_average") {
             CHECK(averages[0] == doctest::Approx(output(0)));
             CHECK(averages[1] == doctest::Approx(output(1)));
             CHECK(averages[2] == doctest::Approx(output(2)));
+}
+
+TEST_CASE ("testing m_33_by_31") {
+    std::array<float, 9> a_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+    Halide::Buffer<float> a{a_array.data(), {3, 3}};
+    std::array<float, 3> b_array{2.0, 2.0, 2.0};
+    Halide::Buffer<float> b{b_array.data(), 3};
+    Halide::Buffer<float> output =
+            Halide::Buffer<float>::make_with_shape_of(b);
+
+    output = photog::m_33_by_31(a, b);
+
+            CHECK(output(0) == doctest::Approx(12.0));
+            CHECK(output(1) == doctest::Approx(30.0));
+            CHECK(output(2) == doctest::Approx(48.0));
+}
+
+TEST_CASE ("testing m_33_by_33") {
+    const int output_dim = 3;
+    std::array<float, 9> a_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+    Halide::Buffer<float> a{a_array.data(), {output_dim, output_dim}};
+    std::array<float, 9> b_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+    Halide::Buffer<float> b{b_array.data(), {output_dim, output_dim}};
+    Halide::Buffer<float> output =
+            Halide::Buffer<float>::make_with_shape_of(b);
+
+    output = photog::m_33_by_33(a, b);
+
+    float expected_output[output_dim][output_dim]{{30,  36,  42},
+                                                  {66,  81,  96},
+                                                  {102, 126, 150}};
+
+    for (int i = 0; i < output_dim; ++i) {
+        for (int j = 0; j < output_dim; ++j) {
+                    CHECK(
+                    output(i, j) == doctest::Approx(expected_output[j][i]));
+        }
+    }
 }

@@ -2,6 +2,8 @@ include(GNUInstallDirs) # Make CMAKE_INSTALL_<dir> variables available
 
 add_subdirectory(generator)
 
+add_subdirectory(utils)
+
 add_subdirectory(color)
 
 # Project Install
@@ -10,6 +12,7 @@ install(TARGETS
         color
         photog_color
         generator
+        utils
         photog_srgb_to_linear
         photog_srgb_to_linear.runtime
         photog_rgb_to_linear

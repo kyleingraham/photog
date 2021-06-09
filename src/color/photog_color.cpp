@@ -4,7 +4,7 @@
 #include "photog_color.h"
 #include "photog_generator.h"
 
-typedef std::map<PhotogWorkingSpace, std::array<float, 9>> XfmrMap;
+typedef std::map<int, std::array<float, 9>> XfmrMap;
 typedef std::map<PhotogWorkingSpace, float> GammaMap;
 
 namespace photog {
@@ -183,44 +183,38 @@ namespace photog {
         }
     };
 
-    GammaMap working_space_gammas{{PhotogWorkingSpace::srgb, 2.2}};
+    Halide::Buffer<float>
+    get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
+        static XfmrMap xfmrs{
+                {PhotogWorkingSpace::srgb,
+                        {0.4124564f, 0.3575761f, 0.1804375f,
+                                0.2126729f, 0.7151522f, 0.0721750f,
+                                0.0193339f, 0.1191920f, 0.9503041f}}
+        };
+
+        return Halide::Buffer<float>(xfmrs.at(working_space).data(),
+                                     {3, 3});
+    }
+
+    Halide::Buffer<float>
+    get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space) {
+        static XfmrMap xfmrs{
+                {PhotogWorkingSpace::srgb,
+                        {3.2404542f, -1.5371385f, -0.4985314f,
+                                -0.9692660f, 1.8760108f, 0.0415560f,
+                                0.0556434f, -0.2040259f, 1.0572252f}}
+        };
+
+        return Halide::Buffer<float>(xfmrs.at(working_space).data(),
+                                     {3, 3});
+    }
 } // namespace photog
 
 float photog_get_working_space_gamma(PhotogWorkingSpace working_space) {
-    return photog::working_space_gammas.at(working_space);
+    static GammaMap gammas{{PhotogWorkingSpace::srgb, 2.2}};
+
+    return gammas.at(working_space);
 }
-
-namespace photog {
-    static XfmrMap rgb_to_xyz_xfmrs{
-            {PhotogWorkingSpace::srgb,
-                    {0.4124564f, 0.3575761f, 0.1804375f,
-                            0.2126729f, 0.7151522f, 0.0721750f,
-                            0.0193339f, 0.1191920f, 0.9503041f}}
-    };
-
-    static XfmrMap xyz_to_rgb_xfmrs{
-            {PhotogWorkingSpace::srgb,
-                    {3.2404542f, -1.5371385f, -0.4985314f,
-                            -0.9692660f, 1.8760108f, 0.0415560f,
-                            0.0556434f, -0.2040259f, 1.0572252f}}
-    };
-
-    Halide::Runtime::Buffer<float>
-    get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
-        // TODO: What are the ownership considerations here? Copied by value?
-        return Halide::Runtime::Buffer<float>(
-                photog::rgb_to_xyz_xfmrs.at(working_space).data(),
-                {3, 3});
-    }
-
-    Halide::Runtime::Buffer<float>
-    get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space) {
-        // TODO: What are the ownership considerations here? Copied by value?
-        return Halide::Runtime::Buffer<float>(
-                photog::xyz_to_rgb_xfmrs.at(working_space).data(),
-                {3, 3});
-    }
-} // namespace photog
 
 halide_buffer_t *photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
     // TODO: What are the ownership considerations here? Copied by value?
@@ -356,6 +350,28 @@ namespace photog {
                                {0, C}});
         }
     };
+
+    Halide::Buffer<float>
+    get_xyz_to_lms_xfmr(ChromadaptMethod chromadapt_method) {
+        static XfmrMap xfmrs{{ChromadaptMethod::bradford,
+                                     {0.8951f, 0.2664f, -0.1614f,
+                                             -0.7502f, 1.7135f, 0.0367f,
+                                             0.0389f, -0.0685f, 1.0296f}}};
+
+        return Halide::Buffer<float>(xfmrs.at(chromadapt_method).data(),
+                                     {3, 3});
+    }
+
+    Halide::Buffer<float>
+    get_lms_to_xyz_xfmr(ChromadaptMethod chromadapt_method) {
+        static XfmrMap xfmrs{{ChromadaptMethod::bradford,
+                                     {0.9869929f, -0.1470543f, 0.1599627f,
+                                             0.4323053f, 0.5183603f, 0.0492912f,
+                                             -0.0085287f, 0.0400428f, 0.9684867f}}};
+
+        return Halide::Buffer<float>(xfmrs.at(chromadapt_method).data(),
+                                     {3, 3});
+    }
 } // namespace photog
 
 // TODO: What is the third argument used for? Stubs and Generator composing?
