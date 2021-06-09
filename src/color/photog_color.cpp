@@ -4,9 +4,6 @@
 #include "photog_color.h"
 #include "photog_generator.h"
 
-typedef std::map<int, std::array<float, 9>> XfmrMap;
-typedef std::map<PhotogWorkingSpace, float> GammaMap;
-
 namespace photog {
     /** Calculates average pixel value for an image.*/
     Halide::Func
@@ -185,12 +182,10 @@ namespace photog {
 
     Halide::Buffer<float>
     get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
-        static XfmrMap xfmrs{
-                {PhotogWorkingSpace::srgb,
-                        {0.4124564f, 0.3575761f, 0.1804375f,
-                                0.2126729f, 0.7151522f, 0.0721750f,
-                                0.0193339f, 0.1191920f, 0.9503041f}}
-        };
+        static std::map<int, std::array<float, 9>> xfmrs =
+                {{PhotogWorkingSpace::srgb, {0.4124564f, 0.3575761f, 0.1804375f,
+                                                    0.2126729f, 0.7151522f, 0.0721750f,
+                                                    0.0193339f, 0.1191920f, 0.9503041f}}};
 
         return Halide::Buffer<float>(xfmrs.at(working_space).data(),
                                      {3, 3});
@@ -198,12 +193,10 @@ namespace photog {
 
     Halide::Buffer<float>
     get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space) {
-        static XfmrMap xfmrs{
-                {PhotogWorkingSpace::srgb,
-                        {3.2404542f, -1.5371385f, -0.4985314f,
-                                -0.9692660f, 1.8760108f, 0.0415560f,
-                                0.0556434f, -0.2040259f, 1.0572252f}}
-        };
+        static std::map<int, std::array<float, 9>> xfmrs =
+                {{PhotogWorkingSpace::srgb, {3.2404542f, -1.5371385f, -0.4985314f,
+                                                    -0.9692660f, 1.8760108f, 0.0415560f,
+                                                    0.0556434f, -0.2040259f, 1.0572252f}}};
 
         return Halide::Buffer<float>(xfmrs.at(working_space).data(),
                                      {3, 3});
@@ -211,7 +204,8 @@ namespace photog {
 } // namespace photog
 
 float photog_get_gamma(PhotogWorkingSpace workingSpace) {
-    static GammaMap gammas{{PhotogWorkingSpace::srgb, 2.2}};
+    static std::map<PhotogWorkingSpace, float> gammas =
+            {{PhotogWorkingSpace::srgb, 2.2}};
 
     return gammas.at(workingSpace);
 }
@@ -353,10 +347,10 @@ namespace photog {
 
     Halide::Buffer<float>
     get_xyz_to_lms_xfmr(ChromadaptMethod chromadapt_method) {
-        static XfmrMap xfmrs{{ChromadaptMethod::bradford,
-                                     {0.8951f, 0.2664f, -0.1614f,
-                                             -0.7502f, 1.7135f, 0.0367f,
-                                             0.0389f, -0.0685f, 1.0296f}}};
+        static std::map<int, std::array<float, 9>> xfmrs =
+                {{ChromadaptMethod::bradford, {0.8951f, 0.2664f, -0.1614f,
+                                                      -0.7502f, 1.7135f, 0.0367f,
+                                                      0.0389f, -0.0685f, 1.0296f}}};
 
         return Halide::Buffer<float>(xfmrs.at(chromadapt_method).data(),
                                      {3, 3});
@@ -364,10 +358,10 @@ namespace photog {
 
     Halide::Buffer<float>
     get_lms_to_xyz_xfmr(ChromadaptMethod chromadapt_method) {
-        static XfmrMap xfmrs{{ChromadaptMethod::bradford,
-                                     {0.9869929f, -0.1470543f, 0.1599627f,
-                                             0.4323053f, 0.5183603f, 0.0492912f,
-                                             -0.0085287f, 0.0400428f, 0.9684867f}}};
+        static std::map<int, std::array<float, 9>> xfmrs =
+                {{ChromadaptMethod::bradford, {0.9869929f, -0.1470543f, 0.1599627f,
+                                                      0.4323053f, 0.5183603f, 0.0492912f,
+                                                      -0.0085287f, 0.0400428f, 0.9684867f}}};
 
         return Halide::Buffer<float>(xfmrs.at(chromadapt_method).data(),
                                      {3, 3});
@@ -378,11 +372,11 @@ namespace photog {
         static std::map<Illuminant, std::array<float, 3>> tristimuli =
                 {{Illuminant::d65, {0.95047f, 1.0f, 1.08883f}}};
 
-        return Halide::Buffer<float>(tristimuli.at(illuminant).data(), {3, 3});
+        return Halide::Buffer<float>(tristimuli.at(illuminant).data(), 3);
     }
 } // namespace photog
 
-halide_buffer_t* photog_get_tristimulus(Illuminant illuminant) {
+halide_buffer_t *photog_get_tristimulus(Illuminant illuminant) {
     return photog::get_tristimulus(illuminant).raw_buffer();
 }
 
