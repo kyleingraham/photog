@@ -1,7 +1,10 @@
+#include "photog_color.h"
+
 #include <array>
 #include <map>
 
-#include "photog_color.h"
+#include "Halide.h"
+
 #include "photog_generator.h"
 
 namespace photog {

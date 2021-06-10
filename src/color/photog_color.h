@@ -1,8 +1,8 @@
 #ifndef PHOTOG_PHOTOG_COLOR_H
 #define PHOTOG_PHOTOG_COLOR_H
 
-#include "HalideBuffer.h"
-
+// Forward declare because we would like to not need Halide to work with
+// this library when compiled.
 struct halide_buffer_t;
 
 #ifdef __cplusplus

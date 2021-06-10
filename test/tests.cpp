@@ -3,8 +3,8 @@
 #include <array>
 
 #include "doctest/doctest.h"
+#include "Halide.h"
 #include "halide_image_io.h"
-#include "HalideBuffer.h"
 
 #include "photog_color.h"
 #include "photog_utils.h"
