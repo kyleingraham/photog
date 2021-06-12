@@ -10,24 +10,30 @@ extern "C" {
 #endif
 
 enum PhotogWorkingSpace {
-    srgb
+    Srgb
 };
 
 enum ChromadaptMethod {
-    bradford
+    Bradford
 };
 
 enum Illuminant {
-    d65
+    D65
 };
 
-halide_buffer_t* photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space);
+halide_buffer_t *photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space);
 
-halide_buffer_t* photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space);
+halide_buffer_t *photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space);
 
 float photog_get_gamma(PhotogWorkingSpace workingSpace);
 
-halide_buffer_t* photog_get_tristimulus(Illuminant illuminant);
+halide_buffer_t *photog_get_tristimulus(Illuminant illuminant);
+
+halide_buffer_t *photog_create_tristimulus(float *tristimulus);
+
+halide_buffer_t *photog_get_xyz_to_lms_xfmr(ChromadaptMethod chromadapt_method);
+
+halide_buffer_t *photog_get_lms_to_xyz_xfmr(ChromadaptMethod chromadapt_method);
 
 #ifdef __cplusplus
 }  // extern "C"

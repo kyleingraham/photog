@@ -45,7 +45,7 @@ TEST_CASE ("testing photog_rgb_to_linear") {
     Halide::Runtime::Buffer<float> output =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
-    photog_rgb_to_linear(input, photog_get_gamma(PhotogWorkingSpace::srgb),
+    photog_rgb_to_linear(input, photog_get_gamma(PhotogWorkingSpace::Srgb),
                          output);
 
     // 0.04045f < input(x, y, c)
@@ -85,8 +85,8 @@ TEST_CASE ("testing photog_rgb_to_xyz") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_rgb_to_xyz(input,
-                      photog_get_gamma(PhotogWorkingSpace::srgb),
-                      photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace::srgb),
+                      photog_get_gamma(PhotogWorkingSpace::Srgb),
+                      photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb),
                       output);
 
     // 0.04045f < input(x, y, c)
@@ -130,14 +130,14 @@ TEST_CASE ("testing photog_linear_to_rgb") {
     Halide::Runtime::Buffer<float> linear =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
-    photog_rgb_to_linear(input, photog_get_gamma(PhotogWorkingSpace::srgb),
+    photog_rgb_to_linear(input, photog_get_gamma(PhotogWorkingSpace::Srgb),
                          linear);
 
     Halide::Runtime::Buffer<float> output =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_linear_to_rgb(linear, photog_get_gamma(
-            PhotogWorkingSpace::srgb), output);
+            PhotogWorkingSpace::Srgb), output);
 
     // 0.0031308f < input(x, y, c)
             CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
@@ -181,16 +181,16 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_rgb_to_xyz(input,
-                      photog_get_gamma(PhotogWorkingSpace::srgb),
-                      photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace::srgb),
+                      photog_get_gamma(PhotogWorkingSpace::Srgb),
+                      photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb),
                       xyz);
 
     Halide::Runtime::Buffer<float> output =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_xyz_to_rgb(xyz,
-                      photog_get_gamma(PhotogWorkingSpace::srgb),
-                      photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace::srgb),
+                      photog_get_gamma(PhotogWorkingSpace::Srgb),
+                      photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace::Srgb),
                       output);
 
     // 0.0031308f < input(x, y, c)

@@ -1,5 +1,6 @@
 #include "photog_color.h"
 
+#include <algorithm>
 #include <array>
 #include <map>
 
@@ -186,7 +187,7 @@ namespace photog {
     Halide::Buffer<float>
     get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space) {
         static std::map<int, std::array<float, 9>> xfmrs =
-                {{PhotogWorkingSpace::srgb, {0.4124564f, 0.3575761f, 0.1804375f,
+                {{PhotogWorkingSpace::Srgb, {0.4124564f, 0.3575761f, 0.1804375f,
                                                     0.2126729f, 0.7151522f, 0.0721750f,
                                                     0.0193339f, 0.1191920f, 0.9503041f}}};
 
@@ -197,7 +198,7 @@ namespace photog {
     Halide::Buffer<float>
     get_xyz_to_rgb_xfmr(PhotogWorkingSpace working_space) {
         static std::map<int, std::array<float, 9>> xfmrs =
-                {{PhotogWorkingSpace::srgb, {3.2404542f, -1.5371385f, -0.4985314f,
+                {{PhotogWorkingSpace::Srgb, {3.2404542f, -1.5371385f, -0.4985314f,
                                                     -0.9692660f, 1.8760108f, 0.0415560f,
                                                     0.0556434f, -0.2040259f, 1.0572252f}}};
 
@@ -208,7 +209,7 @@ namespace photog {
 
 float photog_get_gamma(PhotogWorkingSpace workingSpace) {
     static std::map<PhotogWorkingSpace, float> gammas =
-            {{PhotogWorkingSpace::srgb, 2.2}};
+            {{PhotogWorkingSpace::Srgb, 2.2}};
 
     return gammas.at(workingSpace);
 }
@@ -234,7 +235,7 @@ namespace photog {
 
         void generate() {
             Halide::Buffer<float> rgb_to_xyz_xfmr =
-                    photog::get_rgb_to_xyz_xfmr(PhotogWorkingSpace::srgb);
+                    photog::get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb);
             linear(x, y, c) = photog::srgb_to_linear(srgb(x, y, c));
             xyz(x, y, c) = rgb_to_xyz_xfmr(0, c) * linear(x, y, 0) +
                            rgb_to_xyz_xfmr(1, c) * linear(x, y, 1) +
@@ -296,7 +297,7 @@ namespace photog {
 
         void generate() {
             Halide::Buffer<float> xyz_to_rgb_xfmr =
-                    photog::get_xyz_to_rgb_xfmr(PhotogWorkingSpace::srgb);
+                    photog::get_xyz_to_rgb_xfmr(PhotogWorkingSpace::Srgb);
             linear(x, y, c) = xyz_to_rgb_xfmr(0, c) * xyz(x, y, 0) +
                               xyz_to_rgb_xfmr(1, c) * xyz(x, y, 1) +
                               xyz_to_rgb_xfmr(2, c) * xyz(x, y, 2);
@@ -348,39 +349,60 @@ namespace photog {
         }
     };
 
-    Halide::Buffer<float>
+    std::array<float, 9>
     get_xyz_to_lms_xfmr(ChromadaptMethod chromadapt_method) {
         static std::map<int, std::array<float, 9>> xfmrs =
-                {{ChromadaptMethod::bradford, {0.8951f, 0.2664f, -0.1614f,
+                {{ChromadaptMethod::Bradford, {0.8951f, 0.2664f, -0.1614f,
                                                       -0.7502f, 1.7135f, 0.0367f,
                                                       0.0389f, -0.0685f, 1.0296f}}};
-
-        return Halide::Buffer<float>(xfmrs.at(chromadapt_method).data(),
-                                     {3, 3});
+        // Returns a copy (temporary object).
+        return xfmrs.at(chromadapt_method);
     }
 
-    Halide::Buffer<float>
+    std::array<float, 9>
     get_lms_to_xyz_xfmr(ChromadaptMethod chromadapt_method) {
         static std::map<int, std::array<float, 9>> xfmrs =
-                {{ChromadaptMethod::bradford, {0.9869929f, -0.1470543f, 0.1599627f,
+                {{ChromadaptMethod::Bradford, {0.9869929f, -0.1470543f, 0.1599627f,
                                                       0.4323053f, 0.5183603f, 0.0492912f,
                                                       -0.0085287f, 0.0400428f, 0.9684867f}}};
 
-        return Halide::Buffer<float>(xfmrs.at(chromadapt_method).data(),
-                                     {3, 3});
+        return xfmrs.at(chromadapt_method);
     }
 
-    Halide::Buffer<float>
+    std::array<float, 3>
     get_tristimulus(Illuminant illuminant) {
         static std::map<Illuminant, std::array<float, 3>> tristimuli =
-                {{Illuminant::d65, {0.95047f, 1.0f, 1.08883f}}};
+                {{Illuminant::D65, {0.95047f, 1.0f, 1.08883f}}};
 
-        return Halide::Buffer<float>(tristimuli.at(illuminant).data(), 3);
+        return tristimuli.at(illuminant);
     }
 } // namespace photog
 
+halide_buffer_t *
+photog_get_xyz_to_lms_xfmr(ChromadaptMethod chromadapt_method) {
+    return Halide::Buffer<float>(
+            photog::get_xyz_to_lms_xfmr(chromadapt_method).data(),
+            {3, 3}).raw_buffer();
+}
+
+halide_buffer_t *
+photog_get_lms_to_xyz_xfmr(ChromadaptMethod chromadapt_method) {
+    return Halide::Buffer<float>(
+            photog::get_lms_to_xyz_xfmr(chromadapt_method).data(),
+            {3, 3}).raw_buffer();
+}
+
 halide_buffer_t *photog_get_tristimulus(Illuminant illuminant) {
-    return photog::get_tristimulus(illuminant).raw_buffer();
+    return Halide::Buffer<float>(photog::get_tristimulus(illuminant).data(),
+                                 3).raw_buffer();
+}
+
+halide_buffer_t *photog_create_tristimulus(float *tristimulus) {
+    const int expected_dim = 3;
+    std::array<float, expected_dim> temp{};
+    // We should be safe here since we never write to the resultant buffer.
+    std::copy(tristimulus, tristimulus + expected_dim, temp.begin());
+    return Halide::Buffer<float>(temp.data(), expected_dim).raw_buffer();
 }
 
 // TODO: What is the third argument used for? Stubs and Generator composing?
