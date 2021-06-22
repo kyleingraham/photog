@@ -23,6 +23,7 @@ install(TARGETS
         photog_xyz_to_srgb
         photog_xyz_to_rgb
         photog_average
+        photog_chromadapt
         EXPORT photog_targets
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/photog
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/photog

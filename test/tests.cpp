@@ -18,6 +18,7 @@
 #include "photog_xyz_to_srgb.h"
 #include "photog_xyz_to_rgb.h"
 #include "photog_average.h"
+#include "photog_chromadapt.h"
 
 TEST_CASE ("testing photog_srgb_to_linear") {
     std::string file_path = R"(images/rgb.jpg)";
@@ -38,6 +39,36 @@ TEST_CASE ("testing photog_srgb_to_linear") {
             CHECK(output(1824, 445, 2) == doctest::Approx(0.002428f));
 }
 
+TEST_CASE ("testing photog_chromadapt") {
+    std::string file_path = R"(images/rgb.jpg)";
+    Halide::Runtime::Buffer<float> input =
+            Halide::Tools::load_and_convert_image(file_path);
+    auto output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+    Halide::Runtime::Buffer<float> source_tristimulus(3);
+
+    photog_average(input, source_tristimulus);
+    source_tristimulus =
+            photog::rgb_to_xyz(source_tristimulus,
+                               photog::get_gamma(PhotogWorkingSpace::Srgb),
+                               photog::get_rgb_to_xyz_xfmr(
+                                       PhotogWorkingSpace::Srgb));
+
+    Halide::Runtime::Buffer<float> transform =
+            photog::create_transform(PhotogChromadaptMethod::Bradford,
+                                     source_tristimulus,
+                                     PhotogIlluminant::D65);
+
+    photog_chromadapt(input,
+                      photog::get_gamma(PhotogWorkingSpace::Srgb),
+                      photog::get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb),
+                      photog::get_xyz_to_rgb_xfmr(PhotogWorkingSpace::Srgb),
+                      transform,
+                      output);
+
+    Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
+}
+
 TEST_CASE ("testing photog_rgb_to_linear") {
     std::string file_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
@@ -45,7 +76,7 @@ TEST_CASE ("testing photog_rgb_to_linear") {
     Halide::Runtime::Buffer<float> output =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
-    photog_rgb_to_linear(input, photog_get_gamma(PhotogWorkingSpace::Srgb),
+    photog_rgb_to_linear(input, photog::get_gamma(PhotogWorkingSpace::Srgb),
                          output);
 
     // 0.04045f < input(x, y, c)
@@ -85,8 +116,8 @@ TEST_CASE ("testing photog_rgb_to_xyz") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_rgb_to_xyz(input,
-                      photog_get_gamma(PhotogWorkingSpace::Srgb),
-                      photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb),
+                      photog::get_gamma(PhotogWorkingSpace::Srgb),
+                      photog::get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb),
                       output);
 
     // 0.04045f < input(x, y, c)
@@ -130,14 +161,15 @@ TEST_CASE ("testing photog_linear_to_rgb") {
     Halide::Runtime::Buffer<float> linear =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
-    photog_rgb_to_linear(input, photog_get_gamma(PhotogWorkingSpace::Srgb),
+    photog_rgb_to_linear(input, photog::get_gamma(PhotogWorkingSpace::Srgb),
                          linear);
 
     Halide::Runtime::Buffer<float> output =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
-    photog_linear_to_rgb(linear, photog_get_gamma(
-            PhotogWorkingSpace::Srgb), output);
+    photog_linear_to_rgb(linear,
+                         photog::get_gamma(PhotogWorkingSpace::Srgb),
+                         output);
 
     // 0.0031308f < input(x, y, c)
             CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
@@ -181,16 +213,16 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_rgb_to_xyz(input,
-                      photog_get_gamma(PhotogWorkingSpace::Srgb),
-                      photog_get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb),
+                      photog::get_gamma(PhotogWorkingSpace::Srgb),
+                      photog::get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb),
                       xyz);
 
     Halide::Runtime::Buffer<float> output =
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
 
     photog_xyz_to_rgb(xyz,
-                      photog_get_gamma(PhotogWorkingSpace::Srgb),
-                      photog_get_xyz_to_rgb_xfmr(PhotogWorkingSpace::Srgb),
+                      photog::get_gamma(PhotogWorkingSpace::Srgb),
+                      photog::get_xyz_to_rgb_xfmr(PhotogWorkingSpace::Srgb),
                       output);
 
     // 0.0031308f < input(x, y, c)
@@ -248,11 +280,11 @@ TEST_CASE ("testing photog_average") {
 
 TEST_CASE ("testing mul_33_by_31") {
     std::array<float, 9> a_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    Halide::Buffer<float> a{a_array.data(), {3, 3}};
+    Halide::Runtime::Buffer<float> a{a_array.data(), {3, 3}};
     std::array<float, 3> b_array{2.0, 2.0, 2.0};
-    Halide::Buffer<float> b{b_array.data(), 3};
-    Halide::Buffer<float> output =
-            Halide::Buffer<float>::make_with_shape_of(b);
+    Halide::Runtime::Buffer<float> b{b_array.data(), 3};
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(b);
 
     output = photog::mul_33_by_31(a, b);
 
@@ -264,11 +296,11 @@ TEST_CASE ("testing mul_33_by_31") {
 TEST_CASE ("testing mul_33_by_33") {
     const int output_dim = 3;
     std::array<float, 9> a_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    Halide::Buffer<float> a{a_array.data(), {output_dim, output_dim}};
+    Halide::Runtime::Buffer<float> a{a_array.data(), {output_dim, output_dim}};
     std::array<float, 9> b_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    Halide::Buffer<float> b{b_array.data(), {output_dim, output_dim}};
-    Halide::Buffer<float> output =
-            Halide::Buffer<float>::make_with_shape_of(b);
+    Halide::Runtime::Buffer<float> b{b_array.data(), {output_dim, output_dim}};
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(b);
 
     output = photog::mul_33_by_33(a, b);
 
@@ -284,14 +316,14 @@ TEST_CASE ("testing mul_33_by_33") {
     }
 }
 
-TEST_CASE ("testing div_31_by_31") {
+TEST_CASE ("testing div_vec_by_vec") {
     const int output_dim = 3;
     std::array<float, output_dim> a_array{3.0, 4.0, 5.0};
-    Halide::Buffer<float> a{a_array.data(), output_dim};
+    Halide::Runtime::Buffer<float> a{a_array.data(), output_dim};
     std::array<float, output_dim> b_array{3.0, 2.0, 1.0};
-    Halide::Buffer<float> b{b_array.data(), output_dim};
+    Halide::Runtime::Buffer<float> b{b_array.data(), output_dim};
 
-    Halide::Buffer<float> output = photog::div_31_by_31(a, b);
+    Halide::Runtime::Buffer<float> output = photog::div_vec_by_vec(a, b);
 
     float expected_output[output_dim]{1.0, 2.0, 5.0};
 
@@ -303,8 +335,8 @@ TEST_CASE ("testing div_31_by_31") {
 TEST_CASE ("testing create_diagonal") {
     const int output_dim = 3;
     std::array<float, output_dim> source_array{1.0, 2.0, 3.0};
-    Halide::Buffer<float> source{source_array.data(), output_dim};
-    Halide::Buffer<float> output = photog::create_diagonal(source);
+    Halide::Runtime::Buffer<float> source{source_array.data(), output_dim};
+    Halide::Runtime::Buffer<float> output = photog::create_diagonal(source);
 
     float expected_output[output_dim][output_dim]{{1, 0, 0},
                                                   {0, 2, 0},

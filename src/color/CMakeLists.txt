@@ -98,6 +98,16 @@ add_halide_library(photog_average FROM color.generators
 set_target_properties(photog_average
         PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_average_header})
 
+add_halide_library(photog_chromadapt FROM color.generators
+        GENERATOR photog_chromadapt
+        USE_RUNTIME photog_srgb_to_linear.runtime
+        AUTOSCHEDULER Halide::Adams2019
+        PARAMS auto_schedule=true
+        SCHEDULE photog_chromadapt_schedule
+        HEADER photog_chromadapt_header)
+set_target_properties(photog_chromadapt
+        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_chromadapt_header})
+
 # photog_color library (photog::photo_color target)
 add_library(photog_color photog_color.cpp photog_color.h)
 target_include_directories(photog_color
@@ -126,4 +136,5 @@ target_link_libraries(color
         photog_linear_to_rgb
         photog_xyz_to_srgb
         photog_xyz_to_rgb
-        photog_average)
+        photog_average
+        photog_chromadapt)
