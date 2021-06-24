@@ -207,6 +207,7 @@ namespace photog {
     }
 
     float get_gamma(PhotogWorkingSpace working_space) {
+        // TODO: not used in generators
         static std::map<PhotogWorkingSpace, float> gammas =
                 {{PhotogWorkingSpace::Srgb, 2.2}};
 
@@ -363,6 +364,7 @@ namespace photog {
 
     Halide::Runtime::Buffer<float>
     get_xyz_to_lms_xfmr(PhotogChromadaptMethod chromadapt_method) {
+        // TODO: not used in generators
         static std::map<int, std::array<float, 9>> xfmrs =
                 {{PhotogChromadaptMethod::Bradford, {0.8951f, 0.2664f, -0.1614f,
                                                             -0.7502f, 1.7135f, 0.0367f,
@@ -373,6 +375,7 @@ namespace photog {
 
     Halide::Runtime::Buffer<float>
     get_lms_to_xyz_xfmr(PhotogChromadaptMethod chromadapt_method) {
+        // TODO: not used in generators
         static std::map<int, std::array<float, 9>> xfmrs =
                 {{PhotogChromadaptMethod::Bradford, {0.9869929f, -0.1470543f, 0.1599627f,
                                                             0.4323053f, 0.5183603f, 0.0492912f,
@@ -383,6 +386,7 @@ namespace photog {
 
     Halide::Runtime::Buffer<float>
     get_tristimulus(PhotogIlluminant illuminant) {
+        // TODO: not used in generators
         static std::map<PhotogIlluminant, std::array<float, 3>> tristimuli =
                 {{PhotogIlluminant::D65, {0.95047f, 1.0f, 1.08883f}}};
 
@@ -392,6 +396,7 @@ namespace photog {
     template<typename T>
     Halide::Runtime::Buffer<T>
     normalize_y(const Halide::Runtime::Buffer<T> &xyz_tristimulus, T to) {
+        // TODO: not used in generators
         static_assert(std::is_floating_point<T>::value,
                       "Function only supports floating-point buffers.");
         const int output_dim = 3;
@@ -409,6 +414,7 @@ namespace photog {
     create_transform(PhotogChromadaptMethod chromadapt_method,
                      const Halide::Runtime::Buffer<float> &source_tristimulus,
                      PhotogIlluminant dest_illuminant) {
+        // TODO: not used in generators
         auto dest_tristimulus =
                 photog::normalize_y(photog::get_tristimulus(dest_illuminant),
                                     100.0f);
@@ -477,6 +483,7 @@ namespace photog {
     };
 
     Halide::Runtime::Buffer<float> create_tristimulus(float *tristimulus) {
+        // TODO: not used in generators
         const int expected_dim = 3;
         std::array<float, expected_dim> temp{};
         // We should be safe here since we never write to the resultant buffer.

@@ -7,106 +7,44 @@ target_link_libraries(color.generators
         utils)
 
 ## From here we create Halide libraries for each export from photog_color.cpp
-add_halide_library(photog_srgb_to_linear FROM color.generators
-        GENERATOR photog_srgb_to_linear
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_srgb_to_linear_schedule
-        HEADER photog_srgb_to_linear_header)
-set_target_properties(photog_srgb_to_linear
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_srgb_to_linear_header})
+set(COLOR_GENERATORS
+        photog_srgb_to_linear
+        photog_rgb_to_linear
+        photog_srgb_to_xyz
+        photog_rgb_to_xyz
+        photog_linear_to_srgb
+        photog_linear_to_rgb
+        photog_xyz_to_srgb
+        photog_xyz_to_rgb
+        photog_average
+        photog_chromadapt)
+set(COLOR_GENERATORS ${COLOR_GENERATORS} PARENT_SCOPE)
 
-# TODO: Can I define these programmatically?
+list(GET COLOR_GENERATORS 0 FIRST_GENERATOR)
+set(COLOR_SHARED_RUNTIME ${FIRST_GENERATOR}.runtime)
+set(COLOR_SHARED_RUNTIME ${COLOR_SHARED_RUNTIME} PARENT_SCOPE)
+
 # TODO: Can we add optimization flags to these with target properties?
-add_halide_library(photog_srgb_to_xyz FROM color.generators
-        GENERATOR photog_srgb_to_xyz
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_srgb_to_xyz_schedule
-        HEADER photog_srgb_to_xyz_header)
-set_target_properties(photog_srgb_to_xyz
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_srgb_to_xyz_header})
-
-add_halide_library(photog_rgb_to_xyz FROM color.generators
-        GENERATOR photog_rgb_to_xyz
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_rgb_to_xyz_schedule
-        HEADER photog_rgb_to_xyz_header)
-set_target_properties(photog_rgb_to_xyz
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_rgb_to_xyz_header})
-
-add_halide_library(photog_linear_to_srgb FROM color.generators
-        GENERATOR photog_linear_to_srgb
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_linear_to_srgb_schedule
-        HEADER photog_linear_to_srgb_header)
-set_target_properties(photog_linear_to_srgb
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_linear_to_srgb_header})
-
-add_halide_library(photog_xyz_to_srgb FROM color.generators
-        GENERATOR photog_xyz_to_srgb
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_xyz_to_srgb_schedule
-        HEADER photog_xyz_to_srgb_header)
-set_target_properties(photog_xyz_to_srgb
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_xyz_to_srgb_header})
-
-add_halide_library(photog_xyz_to_rgb FROM color.generators
-        GENERATOR photog_xyz_to_rgb
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_xyz_to_rgb_schedule
-        HEADER photog_xyz_to_rgb_header)
-set_target_properties(photog_xyz_to_rgb
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_xyz_to_rgb_header})
-
-add_halide_library(photog_rgb_to_linear FROM color.generators
-        GENERATOR photog_rgb_to_linear
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_rgb_to_linear_schedule
-        HEADER photog_rgb_to_linear_header)
-set_target_properties(photog_rgb_to_linear
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_rgb_to_linear_header})
-
-add_halide_library(photog_linear_to_rgb FROM color.generators
-        GENERATOR photog_linear_to_rgb
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_linear_to_rgb_schedule
-        HEADER photog_linear_to_rgb_header)
-set_target_properties(photog_linear_to_rgb
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_linear_to_rgb_header})
-
-add_halide_library(photog_average FROM color.generators
-        GENERATOR photog_average
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_average_schedule
-        HEADER photog_average_header)
-set_target_properties(photog_average
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_average_header})
-
-add_halide_library(photog_chromadapt FROM color.generators
-        GENERATOR photog_chromadapt
-        USE_RUNTIME photog_srgb_to_linear.runtime
-        AUTOSCHEDULER Halide::Adams2019
-        PARAMS auto_schedule=true
-        SCHEDULE photog_chromadapt_schedule
-        HEADER photog_chromadapt_header)
-set_target_properties(photog_chromadapt
-        PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${photog_chromadapt_header})
+foreach (COLOR_GENERATOR IN LISTS COLOR_GENERATORS)
+    if (${COLOR_GENERATOR} STREQUAL ${FIRST_GENERATOR})
+        add_halide_library(${COLOR_GENERATOR} FROM color.generators
+                GENERATOR ${COLOR_GENERATOR}
+                AUTOSCHEDULER Halide::Adams2019
+                PARAMS auto_schedule=true
+                SCHEDULE ${COLOR_GENERATOR}_schedule
+                HEADER ${COLOR_GENERATOR}_header)
+    else()
+        add_halide_library(${COLOR_GENERATOR} FROM color.generators
+                GENERATOR ${COLOR_GENERATOR}
+                USE_RUNTIME ${COLOR_SHARED_RUNTIME}
+                AUTOSCHEDULER Halide::Adams2019
+                PARAMS auto_schedule=true
+                SCHEDULE ${COLOR_GENERATOR}_schedule
+                HEADER ${COLOR_GENERATOR}_header)
+    endif ()
+    set_target_properties(${COLOR_GENERATOR}
+            PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${${COLOR_GENERATOR}_header})
+endforeach ()
 
 # photog_color library (photog::photo_color target)
 add_library(photog_color photog_color.cpp photog_color.h)
@@ -127,14 +65,4 @@ add_library(color INTERFACE)
 target_link_libraries(color
         INTERFACE
         photog_color
-        photog_srgb_to_linear
-        photog_srgb_to_linear.runtime
-        photog_rgb_to_linear
-        photog_srgb_to_xyz
-        photog_rgb_to_xyz
-        photog_linear_to_srgb
-        photog_linear_to_rgb
-        photog_xyz_to_srgb
-        photog_xyz_to_rgb
-        photog_average
-        photog_chromadapt)
+        ${COLOR_GENERATORS})

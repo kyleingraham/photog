@@ -29,6 +29,7 @@ enum PhotogIlluminant {
 #endif
 
 // TODO: These should be in a private header. Possible with new C facade that uses these.
+// TODO: 3 libs from one folder?: color, generators
 namespace photog {
     Halide::Runtime::Buffer<float>
     create_transform(PhotogChromadaptMethod chromadapt_method,
