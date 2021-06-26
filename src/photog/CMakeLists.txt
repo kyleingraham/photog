@@ -4,7 +4,7 @@ set(support_headers generator.h utils.h)
 
 # Executable we use for generating color's Halide libraries
 add_executable(color_generators
-        halide_library_generators.cpp
+        color_generators.cpp
         color_utils.cpp
         color_utils.h
         ${color_headers}
