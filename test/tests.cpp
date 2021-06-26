@@ -6,8 +6,7 @@
 #include "Halide.h"
 #include "halide_image_io.h"
 
-#include "photog_color.h"
-#include "photog_utils.h"
+#include "color_utils.h"
 // Available after a CMake build
 #include "photog_srgb_to_linear.h"
 #include "photog_rgb_to_linear.h"
@@ -276,76 +275,4 @@ TEST_CASE ("testing photog_average") {
             CHECK(averages[0] == doctest::Approx(output(0)));
             CHECK(averages[1] == doctest::Approx(output(1)));
             CHECK(averages[2] == doctest::Approx(output(2)));
-}
-
-TEST_CASE ("testing mul_33_by_31") {
-    std::array<float, 9> a_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    Halide::Runtime::Buffer<float> a{a_array.data(), {3, 3}};
-    std::array<float, 3> b_array{2.0, 2.0, 2.0};
-    Halide::Runtime::Buffer<float> b{b_array.data(), 3};
-    Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(b);
-
-    output = photog::mul_33_by_31(a, b);
-
-            CHECK(output(0) == doctest::Approx(12.0));
-            CHECK(output(1) == doctest::Approx(30.0));
-            CHECK(output(2) == doctest::Approx(48.0));
-}
-
-TEST_CASE ("testing mul_33_by_33") {
-    const int output_dim = 3;
-    std::array<float, 9> a_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    Halide::Runtime::Buffer<float> a{a_array.data(), {output_dim, output_dim}};
-    std::array<float, 9> b_array{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-    Halide::Runtime::Buffer<float> b{b_array.data(), {output_dim, output_dim}};
-    Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(b);
-
-    output = photog::mul_33_by_33(a, b);
-
-    float expected_output[output_dim][output_dim]{{30,  36,  42},
-                                                  {66,  81,  96},
-                                                  {102, 126, 150}};
-
-    for (int i = 0; i < output_dim; ++i) {
-        for (int j = 0; j < output_dim; ++j) {
-                    CHECK(
-                    output(i, j) == doctest::Approx(expected_output[j][i]));
-        }
-    }
-}
-
-TEST_CASE ("testing div_vec_by_vec") {
-    const int output_dim = 3;
-    std::array<float, output_dim> a_array{3.0, 4.0, 5.0};
-    Halide::Runtime::Buffer<float> a{a_array.data(), output_dim};
-    std::array<float, output_dim> b_array{3.0, 2.0, 1.0};
-    Halide::Runtime::Buffer<float> b{b_array.data(), output_dim};
-
-    Halide::Runtime::Buffer<float> output = photog::div_vec_by_vec(a, b);
-
-    float expected_output[output_dim]{1.0, 2.0, 5.0};
-
-    for (int i = 0; i < output_dim; ++i) {
-                CHECK(output(i) == doctest::Approx(expected_output[i]));
-    }
-}
-
-TEST_CASE ("testing create_diagonal") {
-    const int output_dim = 3;
-    std::array<float, output_dim> source_array{1.0, 2.0, 3.0};
-    Halide::Runtime::Buffer<float> source{source_array.data(), output_dim};
-    Halide::Runtime::Buffer<float> output = photog::create_diagonal(source);
-
-    float expected_output[output_dim][output_dim]{{1, 0, 0},
-                                                  {0, 2, 0},
-                                                  {0, 0, 3}};
-
-    for (int i = 0; i < output_dim; ++i) {
-        for (int j = 0; j < output_dim; ++j) {
-                    CHECK(
-                    output(i, j) == doctest::Approx(expected_output[j][i]));
-        }
-    }
 }

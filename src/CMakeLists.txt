@@ -1,20 +1,13 @@
 include(GNUInstallDirs) # Make CMAKE_INSTALL_<dir> variables available
 
-add_subdirectory(generator)
-
-add_subdirectory(utils)
-
-add_subdirectory(color)
+add_subdirectory(photog)
 
 # Project Install
 ## Target destinations for project
 install(TARGETS
-        color
         photog_color
-        generator
-        utils
-        ${COLOR_GENERATORS}
-        ${COLOR_SHARED_RUNTIME}
+        ${COLOR_HALIDE_LIBRARIES}
+        ${SHARED_HALIDE_RUNTIME}
         EXPORT photog_targets
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/photog
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/photog

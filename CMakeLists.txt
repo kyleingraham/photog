@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
+# Find doctest
+find_package(doctest REQUIRED)
+
 # Find Halide
 if (APPLE)
     # Prevents latching onto JPEG/PNG libraries vendored within frameworks

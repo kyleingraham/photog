@@ -1,35 +1,14 @@
-#ifndef PHOTOG_PHOTOG_COLOR_H
-#define PHOTOG_PHOTOG_COLOR_H
+#ifndef PHOTOG_COLOR_UTILS_H
+#define PHOTOG_COLOR_UTILS_H
 
 #include <cmath>
 #include <type_traits>
 
 #include "Halide.h"
 
-#include "photog_utils.h"
+#include "photog/color.h"
+#include "utils.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-enum PhotogWorkingSpace {
-    Srgb
-};
-
-enum PhotogChromadaptMethod {
-    Bradford
-};
-
-enum PhotogIlluminant {
-    D65
-};
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-// TODO: These should be in a private header. Possible with new C facade that uses these.
-// TODO: 3 libs from one folder?: color, generators
 namespace photog {
     Halide::Runtime::Buffer<float>
     create_transform(PhotogChromadaptMethod chromadapt_method,
@@ -64,4 +43,4 @@ namespace photog {
     }
 }
 
-#endif //PHOTOG_PHOTOG_COLOR_H
+#endif //PHOTOG_COLOR_UTILS_H

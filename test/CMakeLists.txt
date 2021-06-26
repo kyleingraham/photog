@@ -1,17 +1,14 @@
 # Find doctest
-if (APPLE)
-    find_package(doctest REQUIRED)
-endif ()
+find_package(doctest REQUIRED)
 
 # Test executable
 add_executable(tests tests.cpp)
-
 target_link_libraries(tests
         PRIVATE
+        color_halide_libraries_bundle
+        color_utils
         doctest::doctest
-        Halide::Tools
-        color
-        utils) # linking any add_halide_library target brings in its headers and libraries
+        Halide::Tools)
 
 ## Linking for JPEG/PNG libraries is different between OS's
 if (APPLE)
