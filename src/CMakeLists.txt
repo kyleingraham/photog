@@ -5,7 +5,7 @@ add_subdirectory(photog)
 # Project Install
 ## Target destinations for project
 install(TARGETS
-        photog_color
+        color
         ${COLOR_HALIDE_LIBRARIES}
         ${SHARED_HALIDE_RUNTIME}
         EXPORT photog_targets

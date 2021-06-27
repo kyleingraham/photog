@@ -84,20 +84,22 @@ target_link_libraries(color_utils
         doctest::doctest)
 
 # Public color library (photog::photog_color target)
-add_library(photog_color
+add_library(color
         color.cpp
         ${color_headers})
-target_include_directories(photog_color
+target_include_directories(color
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/photog>"
         PRIVATE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
-target_link_libraries(photog_color
+target_link_libraries(color
         PRIVATE
         ${color_halide_libraries})
-set_target_properties(photog_color
+set_target_properties(color
         PROPERTIES
         PUBLIC_HEADER
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/photog/color.h)
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/photog/color.h
+        OUTPUT_NAME
+        "photog_color")
