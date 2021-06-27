@@ -2,6 +2,13 @@
 set(color_headers include/photog/color.h)
 set(support_headers generator.h utils.h)
 
+if (NOT DEFINED GEN_X_MAX)
+    set(GEN_X_MAX 500)
+endif ()
+if (NOT DEFINED GEN_Y_MAX)
+    set(GEN_Y_MAX 500)
+endif ()
+
 # Executable we use for generating color's Halide libraries
 add_executable(color_generators
         color_generators.cpp
@@ -19,7 +26,9 @@ target_link_libraries(color_generators
         Halide::Generator)
 target_compile_definitions(color_generators
         PUBLIC
-        DOCTEST_CONFIG_DISABLE) # Prevents configuring doctest. We have a test runner elsewhere.
+        DOCTEST_CONFIG_DISABLE # Prevents configuring doctest. We have a test runner elsewhere.
+        X_MAX=${GEN_X_MAX}
+        Y_MAX=${GEN_Y_MAX})
 
 ## From here we create Halide libraries for each registered generator
 set(color_halide_libraries

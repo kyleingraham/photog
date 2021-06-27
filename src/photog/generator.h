@@ -10,10 +10,11 @@ namespace photog {
     class Generator : public Halide::Generator<T> {
     protected:
         Halide::GeneratorParam<bool> manual_schedule{"manual_schedule", false};
-        // Use these parameters for external control of auto-scheduling estimates.
+        // Externally-controlled auto-scheduling estimate variables.
+        // Defaults are preprocessor-defines set in the build system.
         // Use in your auto-schedule to set max extents for x and y vars.
-        Halide::GeneratorParam<int> x_max{"x_max", 500};
-        Halide::GeneratorParam<int> y_max{"y_max", 500};
+        Halide::GeneratorParam<int> x_max{"x_max", X_MAX};
+        Halide::GeneratorParam<int> y_max{"y_max", Y_MAX};
 
     public:
         /** Called by Halide for your algorithm's schedule. Calls schedule_auto/schedule_manual
