@@ -6,6 +6,7 @@
 #include "Halide.h"
 #include "halide_image_io.h"
 
+#include "photog/color.h"
 #include "color_utils.h"
 // Available after a CMake build
 #include "photog_srgb_to_linear.h"
@@ -17,7 +18,6 @@
 #include "photog_xyz_to_srgb.h"
 #include "photog_xyz_to_rgb.h"
 #include "photog_average.h"
-#include "photog_chromadapt.h"
 
 TEST_CASE ("testing photog_srgb_to_linear") {
     std::string file_path = R"(images/rgb.jpg)";
@@ -46,24 +46,12 @@ TEST_CASE ("testing photog_chromadapt") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
     Halide::Runtime::Buffer<float> source_tristimulus(3);
 
-    photog_average(input, source_tristimulus);
-    source_tristimulus =
-            photog::rgb_to_xyz(source_tristimulus,
-                               photog::get_gamma(PhotogWorkingSpace::Srgb),
-                               photog::get_rgb_to_xyz_xfmr(
-                                       PhotogWorkingSpace::Srgb));
-
-    Halide::Runtime::Buffer<float> transform =
-            photog::create_transform(PhotogChromadaptMethod::Bradford,
-                                     source_tristimulus,
-                                     PhotogIlluminant::D65);
-
-    photog_chromadapt(input,
-                      photog::get_gamma(PhotogWorkingSpace::Srgb),
-                      photog::get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb),
-                      photog::get_xyz_to_rgb_xfmr(PhotogWorkingSpace::Srgb),
-                      transform,
-                      output);
+    photog_chromadapt(reinterpret_cast<float *>(input.raw_buffer()->host),
+                      input.width(), input.height(),
+                      PhotogWorkingSpace::Srgb,
+                      PhotogChromadaptMethod::Bradford,
+                      PhotogIlluminant::D65,
+                      reinterpret_cast<float *>(output.raw_buffer()->host));
 
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
 }

@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <map>
-#include <type_traits>
 
 #include "Halide.h"
 
@@ -26,12 +25,12 @@ namespace photog {
         return gammas.at(working_space);
     }
 
-    Halide::Runtime::Buffer<float>
+    std::array<float, 3>
     get_tristimulus(PhotogIlluminant illuminant) {
         static std::map<PhotogIlluminant, std::array<float, 3>> tristimuli =
                 {{PhotogIlluminant::D65, {0.95047f, 1.0f, 1.08883f}}};
 
-        return copy_to_buffer(tristimuli.at(illuminant));
+        return tristimuli.at(illuminant);
     }
 
     Halide::Runtime::Buffer<float>
@@ -93,10 +92,7 @@ namespace photog {
     Halide::Runtime::Buffer<float>
     create_transform(PhotogChromadaptMethod chromadapt_method,
                      const Halide::Runtime::Buffer<float> &source_tristimulus,
-                     PhotogIlluminant dest_illuminant) {
-        auto dest_tristimulus =
-                photog::normalize_y(photog::get_tristimulus(dest_illuminant),
-                                    100.0f);
+                     const Halide::Runtime::Buffer<float> &dest_tristimulus) {
         auto xyz_to_lms_xfmr =
                 photog::get_xyz_to_lms_xfmr(chromadapt_method);
         auto lms_to_xyz_xfmr =
@@ -107,7 +103,9 @@ namespace photog {
                                      photog::normalize_y(source_tristimulus,
                                                          100.0f));
         auto lms_dest =
-                photog::mul_33_by_31(xyz_to_lms_xfmr, dest_tristimulus);
+                photog::mul_33_by_31(xyz_to_lms_xfmr,
+                                     photog::normalize_y(dest_tristimulus,
+                                                         100.0f));
         auto lms_gain =
                 photog::div_vec_by_vec(lms_dest, lms_source);
         auto lms_gain_diagonal =

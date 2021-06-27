@@ -5,6 +5,7 @@ find_package(doctest REQUIRED)
 add_executable(tests tests.cpp)
 target_link_libraries(tests
         PRIVATE
+        color
         color_halide_libraries_bundle
         color_utils
         doctest::doctest

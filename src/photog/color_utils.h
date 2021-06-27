@@ -13,12 +13,12 @@ namespace photog {
     Halide::Runtime::Buffer<float>
     create_transform(PhotogChromadaptMethod chromadapt_method,
                      const Halide::Runtime::Buffer<float> &source_tristimulus,
-                     PhotogIlluminant dest_illuminant);
-
-    Halide::Runtime::Buffer<float>
-    create_tristimulus(float *tristimulus);
+                     const Halide::Runtime::Buffer<float> &dest_tristimulus);
 
     float get_gamma(PhotogWorkingSpace working_space);
+
+    std::array<float, 3>
+    get_tristimulus(PhotogIlluminant illuminant);
 
     Halide::Runtime::Buffer<float>
     get_rgb_to_xyz_xfmr(PhotogWorkingSpace working_space);

@@ -380,5 +380,4 @@ HALIDE_REGISTER_GENERATOR(photog::LinearToRgb, photog_linear_to_rgb);
 HALIDE_REGISTER_GENERATOR(photog::XyzToSrgb, photog_xyz_to_srgb);
 HALIDE_REGISTER_GENERATOR(photog::XyzToRgb, photog_xyz_to_rgb);
 HALIDE_REGISTER_GENERATOR(photog::Average, photog_average);
-// TODO: change to photog_chromadapt_impl
-HALIDE_REGISTER_GENERATOR(photog::Chromadapt, photog_chromadapt);
+HALIDE_REGISTER_GENERATOR(photog::Chromadapt, photog_chromadapt_impl);

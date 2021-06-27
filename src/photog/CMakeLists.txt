@@ -32,7 +32,7 @@ set(color_halide_libraries
         photog_xyz_to_srgb
         photog_xyz_to_rgb
         photog_average
-        photog_chromadapt)
+        photog_chromadapt_impl)
 set(COLOR_HALIDE_LIBRARIES ${color_halide_libraries} PARENT_SCOPE)
 
 list(GET color_halide_libraries 0 first_halide_library)
@@ -86,7 +86,10 @@ target_link_libraries(color_utils
 # Public color library (photog::photog_color target)
 add_library(color
         color.cpp
-        ${color_headers})
+        ${color_headers}
+        color_utils.cpp
+        color_utils.h
+        ${support_headers})
 target_include_directories(color
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -96,10 +99,15 @@ target_include_directories(color
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 target_link_libraries(color
         PRIVATE
-        ${color_halide_libraries})
+        ${color_halide_libraries}
+        doctest::doctest
+        Halide::Halide)
 set_target_properties(color
         PROPERTIES
         PUBLIC_HEADER
         ${CMAKE_CURRENT_SOURCE_DIR}/include/photog/color.h
         OUTPUT_NAME
         "photog_color")
+target_compile_definitions(color
+        PRIVATE
+        DOCTEST_CONFIG_DISABLE)
