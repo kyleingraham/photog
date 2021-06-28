@@ -42,7 +42,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             input.set_estimates({{0, X},
                                  {0, Y},
@@ -73,7 +73,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             srgb.set_estimate(srgb.args()[0], 0, X);
             srgb.set_estimate(srgb.args()[1], 0, Y);
@@ -104,7 +104,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             linear.set_estimate(linear.args()[0], 0, X);
             linear.set_estimate(linear.args()[1], 0, Y);
@@ -134,7 +134,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             rgb.set_estimate(rgb.args()[0], 0, X);
             rgb.set_estimate(rgb.args()[1], 0, Y);
@@ -166,7 +166,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             linear.set_estimate(linear.args()[0], 0, X);
             linear.set_estimate(linear.args()[1], 0, Y);
@@ -198,7 +198,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             srgb.set_estimate(srgb.args()[0], 0, X);
             srgb.set_estimate(srgb.args()[1], 0, Y);
@@ -239,7 +239,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             rgb.set_estimate(rgb.args()[0], 0, X);
             rgb.set_estimate(rgb.args()[1], 0, Y);
@@ -271,7 +271,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             xyz.set_estimate(xyz.args()[0], 0, X);
             xyz.set_estimate(xyz.args()[1], 0, Y);
@@ -314,7 +314,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             xyz.set_estimate(xyz.args()[0], 0, X);
             xyz.set_estimate(xyz.args()[1], 0, Y);
@@ -355,7 +355,7 @@ namespace photog {
         }
 
         void schedule_auto() override {
-            const int X{x_max}, Y{y_max}, C{3};
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
             input.set_estimate(input.args()[0], 0, X);
             input.set_estimate(input.args()[1], 0, Y);

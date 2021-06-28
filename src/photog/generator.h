@@ -12,9 +12,11 @@ namespace photog {
         Halide::GeneratorParam<bool> manual_schedule{"manual_schedule", false};
         // Externally-controlled auto-scheduling estimate variables.
         // Defaults are preprocessor-defines set in the build system.
-        // Use in your auto-schedule to set max extents for x and y vars.
-        Halide::GeneratorParam<int> x_max{"x_max", X_MAX};
-        Halide::GeneratorParam<int> y_max{"y_max", Y_MAX};
+        // Use in your auto-schedule to set estimated extents for x and y vars.
+        Halide::GeneratorParam<int> x_extent_estimate{"x_extent_estimate",
+                                                      X_EXTENT_ESTIMATE};
+        Halide::GeneratorParam<int> y_extent_estimate{"y_extent_estimate",
+                                                      Y_EXTENT_ESTIMATE};
 
     public:
         /** Called by Halide for your algorithm's schedule. Calls schedule_auto/schedule_manual

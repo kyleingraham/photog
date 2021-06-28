@@ -2,11 +2,20 @@
 set(color_headers include/photog/color.h)
 set(support_headers generator.h utils.h)
 
-if (NOT DEFINED GEN_X_MAX)
-    set(GEN_X_MAX 500)
+if (DEFINED PHOTOG_WIDTH_ESTIMATE)
+    set(photog_width_estimate ${PHOTOG_WIDTH_ESTIMATE})
+elseif (DEFINED ENV{PHOTOG_WIDTH_ESTIMATE})
+    set(photog_width_estimate $ENV{PHOTOG_WIDTH_ESTIMATE})
+else ()
+    set(photog_width_estimate 500)
 endif ()
-if (NOT DEFINED GEN_Y_MAX)
-    set(GEN_Y_MAX 500)
+
+if (DEFINED PHOTOG_HEIGHT_ESTIMATE)
+    set(photog_height_estimate ${PHOTOG_HEIGHT_ESTIMATE})
+elseif (DEFINED ENV{PHOTOG_HEIGHT_ESTIMATE})
+    set(photog_height_estimate $ENV{PHOTOG_HEIGHT_ESTIMATE})
+else ()
+    set(photog_height_estimate 500)
 endif ()
 
 # Executable we use for generating color's Halide libraries
@@ -27,8 +36,8 @@ target_link_libraries(color_generators
 target_compile_definitions(color_generators
         PUBLIC
         DOCTEST_CONFIG_DISABLE # Prevents configuring doctest. We have a test runner elsewhere.
-        X_MAX=${GEN_X_MAX}
-        Y_MAX=${GEN_Y_MAX})
+        X_EXTENT_ESTIMATE=${photog_width_estimate}
+        Y_EXTENT_ESTIMATE=${photog_height_estimate})
 
 ## From here we create Halide libraries for each registered generator
 set(color_halide_libraries
