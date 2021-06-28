@@ -6,12 +6,12 @@
 
 #include "color_utils.h"
 #include "photog_average.h"
-#include "photog_chromadapt_impl.h"
+#include "photog_chromadapt_p3_impl.h"
 
-void photog_chromadapt_byot(float *input, int width, int height,
-                            PhotogWorkingSpace working_space,
-                            PhotogChromadaptMethod chromadapt_method,
-                            float *dest_tristimulus, float *output) {
+void photog_chromadapt_diy_p3(float *input, int width, int height,
+                              PhotogWorkingSpace working_space,
+                              PhotogChromadaptMethod chromadapt_method,
+                              float *dest_tristimulus, float *output) {
     const int channels = 3;
     Halide::Runtime::Buffer<float> in{input, {width, height, channels}};
     Halide::Runtime::Buffer<float> source_est(3);
@@ -29,18 +29,19 @@ void photog_chromadapt_byot(float *input, int width, int height,
     Halide::Runtime::Buffer<float> transform =
             photog::create_transform(chromadapt_method, source_est, dest);
 
-    photog_chromadapt_impl(in, gamma, rgb_to_xyz_xfmr,
-                           photog::get_xyz_to_rgb_xfmr(working_space),
-                           transform, out);
+    photog_chromadapt_p3_impl(in, gamma, rgb_to_xyz_xfmr,
+                              photog::get_xyz_to_rgb_xfmr(working_space),
+                              transform, out);
 }
 
-void photog_chromadapt(float *input, int width, int height,
-                       PhotogWorkingSpace working_space,
-                       PhotogChromadaptMethod chromadapt_method,
-                       PhotogIlluminant dest_illuminant, float *output) {
+void photog_chromadapt_p3(float *input, int width, int height,
+                          PhotogWorkingSpace working_space,
+                          PhotogChromadaptMethod chromadapt_method,
+                          PhotogIlluminant dest_illuminant, float *output) {
     std::array<float, 3> dest_tristimulus =
             photog::get_tristimulus(dest_illuminant);
 
-    photog_chromadapt_byot(input, width, height, working_space,
-                           chromadapt_method, dest_tristimulus.data(), output);
+    photog_chromadapt_diy_p3(input, width, height, working_space,
+                             chromadapt_method, dest_tristimulus.data(),
+                             output);
 }

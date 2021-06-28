@@ -38,7 +38,7 @@ TEST_CASE ("testing photog_srgb_to_linear") {
             CHECK(output(1824, 445, 2) == doctest::Approx(0.002428f));
 }
 
-TEST_CASE ("testing photog_chromadapt") {
+TEST_CASE ("testing photog_chromadapt_p3") {
     std::string file_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             Halide::Tools::load_and_convert_image(file_path);
@@ -46,12 +46,12 @@ TEST_CASE ("testing photog_chromadapt") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
     Halide::Runtime::Buffer<float> source_tristimulus(3);
 
-    photog_chromadapt(reinterpret_cast<float *>(input.raw_buffer()->host),
-                      input.width(), input.height(),
-                      PhotogWorkingSpace::Srgb,
-                      PhotogChromadaptMethod::Bradford,
-                      PhotogIlluminant::D65,
-                      reinterpret_cast<float *>(output.raw_buffer()->host));
+    photog_chromadapt_p3(reinterpret_cast<float *>(input.raw_buffer()->host),
+                         input.width(), input.height(),
+                         PhotogWorkingSpace::Srgb,
+                         PhotogChromadaptMethod::Bradford,
+                         PhotogIlluminant::D65,
+                         reinterpret_cast<float *>(output.raw_buffer()->host));
 
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
 }

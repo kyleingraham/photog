@@ -51,7 +51,7 @@ set(color_halide_libraries
         photog_xyz_to_srgb
         photog_xyz_to_rgb
         photog_average
-        photog_chromadapt_impl)
+        photog_chromadapt_p3_impl)
 set(COLOR_HALIDE_LIBRARIES ${color_halide_libraries} PARENT_SCOPE)
 
 list(GET color_halide_libraries 0 first_halide_library)
