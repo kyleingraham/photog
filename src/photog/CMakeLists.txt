@@ -2,6 +2,7 @@
 set(color_headers include/photog/color.h)
 set(support_headers generator.h utils.h)
 
+# Global extent estimates for generators
 if (DEFINED PHOTOG_WIDTH_ESTIMATE)
     set(photog_width_estimate ${PHOTOG_WIDTH_ESTIMATE})
 elseif (DEFINED ENV{PHOTOG_WIDTH_ESTIMATE})
