@@ -1,4 +1,5 @@
 # TODO: Exclude embedded doctest tests from release builds
+# TODO: Add CMakePresets.json file
 set(color_headers include/photog/color.h)
 set(support_headers generator.h utils.h)
 
