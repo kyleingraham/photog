@@ -81,7 +81,7 @@ foreach (color_halide_library IN LISTS color_halide_libraries)
             PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${${color_halide_library}_header})
 endforeach ()
 
-# Internal access to all generated Halide libraries
+# Internal access to all generated color Halide libraries
 add_library(color_halide_libraries_bundle INTERFACE)
 target_link_libraries(color_halide_libraries_bundle
         INTERFACE
@@ -103,7 +103,7 @@ target_link_libraries(color_utils
         PRIVATE
         doctest::doctest)
 
-# Public color library (photog::photog_color target)
+# Public color library (photog::color target)
 add_library(color
         color.cpp
         ${color_headers}

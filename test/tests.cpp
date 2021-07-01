@@ -46,12 +46,41 @@ TEST_CASE ("testing photog_chromadapt_p3") {
             Halide::Runtime::Buffer<float>::make_with_shape_of(input);
     Halide::Runtime::Buffer<float> source_tristimulus(3);
 
-    photog_chromadapt_p3(reinterpret_cast<float *>(input.raw_buffer()->host),
+    photog_chromadapt_p3(input.data(),
                          input.width(), input.height(),
                          PhotogWorkingSpace::Srgb,
                          PhotogChromadaptMethod::Bradford,
                          PhotogIlluminant::D65,
-                         reinterpret_cast<float *>(output.raw_buffer()->host));
+                         output.data());
+
+    Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
+}
+
+TEST_CASE ("testing photog_chromadapt_diy_p3") {
+    std::string file_path = R"(images/rgb.jpg)";
+    Halide::Runtime::Buffer<float> input =
+            Halide::Tools::load_and_convert_image(file_path);
+    auto output =
+            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+    Halide::Runtime::Buffer<float> source_tristimulus(3);
+
+    // Pixel that should be white in the destination image.
+    for (int i = 0; i < 3; ++i)
+        source_tristimulus(i) = input(328, 3261, i);
+
+    source_tristimulus =
+            photog::rgb_to_xyz(source_tristimulus,
+                               photog::get_gamma(PhotogWorkingSpace::Srgb),
+                               photog::get_rgb_to_xyz_xfmr(
+                                       PhotogWorkingSpace::Srgb));
+
+    photog_chromadapt_diy_p3(input.data(), input.width(), input.height(),
+                             source_tristimulus.data(),
+                             PhotogWorkingSpace::Srgb,
+                             PhotogChromadaptMethod::Bradford,
+                             photog::get_tristimulus(
+                                     PhotogIlluminant::D65).data(),
+                             output.data());
 
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
 }
