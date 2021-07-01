@@ -21,9 +21,11 @@ namespace photog {
         else
             wide = narrow;
 
+        // Refactoring this code to remove intermediate Func sum does not yield a speed increase.
         sum(c) = Halide::cast(wide, 0);
         sum(c) = Halide::sum(Halide::cast(wide, image(r.x, r.y, c)));
         average(c) = Halide::cast(narrow, sum(c) / (width * height * channels));
+
         return average;
     }
 
