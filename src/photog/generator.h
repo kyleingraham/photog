@@ -5,10 +5,17 @@
 
 #include "Halide.h"
 
+#include "constants.h"
+
 namespace photog {
     template<class T>
     class Generator : public Halide::Generator<T> {
     protected:
+        Halide::GeneratorParam<Layout> layout{"layout", Layout::Planar,
+                                              {{"planar",
+                                                Layout::Planar},
+                                               {"interleaved",
+                                                Layout::Interleaved}}};
         Halide::GeneratorParam<bool> manual_schedule{"manual_schedule", false};
         // Externally-controlled auto-scheduling estimate variables.
         // Defaults are preprocessor-defines set in the build system.

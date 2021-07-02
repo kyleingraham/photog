@@ -2,10 +2,15 @@
 #define PHOTOG_PHOTOG_UTILS_H
 
 #include <array>
+#include <iostream>
+#include <map>
+#include <string>
 #include <type_traits>
 
 #include "doctest/doctest.h"
 #include "Halide.h"
+
+#include "constants.h"
 
 namespace photog {
     template<typename T>
@@ -133,6 +138,26 @@ namespace photog {
             output(x) = values[x];
 
         return output;
+    }
+
+    photog::Layout get_layout();
+
+    template<typename T>
+    Halide::Runtime::Buffer<T>
+    get_buffer(float *data, int width, int height, int channels) {
+        photog::Layout layout = photog::get_layout();
+
+        if (layout == Layout::Planar)
+            return Halide::Runtime::Buffer<T>{data, {width, height, channels}};
+        else if (layout == Layout::Interleaved)
+            return Halide::Runtime::Buffer<float>::make_interleaved(data, width,
+                                                                    height,
+                                                                    channels);
+        else {
+            std::cerr << "Unsupported image layout " << static_cast<int>(layout)
+                      << " in photog::get_buffer()." << std::endl;
+            abort();
+        }
     }
 }
 

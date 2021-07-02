@@ -1,7 +1,7 @@
-# TODO: Exclude embedded doctest tests from release builds
-# TODO: Add CMakePresets.json file
+# TODO: Exclude embedded doctest tests from release builds.
+# TODO: Add CMakePresets.json file.
 set(color_headers include/photog/color.h)
-set(support_headers generator.h utils.h)
+set(support_source constants.h generator.h utils.cpp utils.h)
 
 # Global extent estimates for generators
 if (DEFINED PHOTOG_WIDTH_ESTIMATE)
@@ -20,26 +20,42 @@ else ()
     set(photog_height_estimate 500)
 endif ()
 
+# TODO: Can we provide a useful message if this value isn't valid?
+# TODO: Add CMake function for loading CLI/environment arguments.
+if (DEFINED PHOTOG_IMAGE_LAYOUT)
+    set(photog_image_layout ${PHOTOG_IMAGE_LAYOUT})
+elseif (DEFINED ENV{PHOTOG_IMAGE_LAYOUT})
+    set(photog_image_layout $ENV{PHOTOG_IMAGE_LAYOUT})
+else ()
+    set(photog_image_layout "planar")
+endif ()
+
+add_library(definitions INTERFACE)
+target_compile_definitions(definitions
+        INTERFACE
+        LAYOUT="${photog_image_layout}"
+        X_EXTENT_ESTIMATE=${photog_width_estimate}
+        Y_EXTENT_ESTIMATE=${photog_height_estimate})
+
 # Executable we use for generating color's Halide libraries
 add_executable(color_generators
         color_generators.cpp
         color_utils.cpp
         color_utils.h
         ${color_headers}
-        ${support_headers})
+        ${support_source})
 target_include_directories(color_generators
         PRIVATE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 target_link_libraries(color_generators
         PRIVATE
+        definitions
         doctest::doctest
         Halide::Generator)
 target_compile_definitions(color_generators
         PUBLIC
-        DOCTEST_CONFIG_DISABLE # Prevents configuring doctest. We have a test runner elsewhere.
-        X_EXTENT_ESTIMATE=${photog_width_estimate}
-        Y_EXTENT_ESTIMATE=${photog_height_estimate})
+        DOCTEST_CONFIG_DISABLE) # Prevents configuring doctest. We have a test runner elsewhere.
 
 ## From here we create Halide libraries for each registered generator
 set(color_halide_libraries
@@ -52,7 +68,7 @@ set(color_halide_libraries
         photog_xyz_to_srgb
         photog_xyz_to_rgb
         photog_average
-        photog_chromadapt_p3_impl)
+        photog_chromadapt_impl)
 set(COLOR_HALIDE_LIBRARIES ${color_halide_libraries} PARENT_SCOPE)
 
 list(GET color_halide_libraries 0 first_halide_library)
@@ -65,7 +81,7 @@ foreach (color_halide_library IN LISTS color_halide_libraries)
         add_halide_library(${color_halide_library} FROM color_generators
                 GENERATOR ${color_halide_library}
                 AUTOSCHEDULER Halide::Adams2019
-                PARAMS auto_schedule=true
+                PARAMS auto_schedule=true layout=${photog_image_layout}
                 SCHEDULE ${color_halide_library}_schedule
                 HEADER ${color_halide_library}_header)
     else ()
@@ -73,7 +89,7 @@ foreach (color_halide_library IN LISTS color_halide_libraries)
                 GENERATOR ${color_halide_library}
                 USE_RUNTIME ${shared_halide_runtime}
                 AUTOSCHEDULER Halide::Adams2019
-                PARAMS auto_schedule=true
+                PARAMS auto_schedule=true layout=${photog_image_layout}
                 SCHEDULE ${color_halide_library}_schedule
                 HEADER ${color_halide_library}_header)
     endif ()
@@ -89,15 +105,17 @@ target_link_libraries(color_halide_libraries_bundle
 
 # Internal access to color utility functions
 add_library(color_utils
+        ${color_headers}
         color_utils.cpp
         color_utils.h
-        ${color_headers}
-        ${support_headers})
+        ${support_source})
 target_include_directories(color_utils
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 target_link_libraries(color_utils
+        PRIVATE
+        definitions
         PUBLIC
         Halide::Halide
         PRIVATE
@@ -109,7 +127,7 @@ add_library(color
         ${color_headers}
         color_utils.cpp
         color_utils.h
-        ${support_headers})
+        ${support_source})
 target_include_directories(color
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -120,6 +138,7 @@ target_include_directories(color
 target_link_libraries(color
         PRIVATE
         ${color_halide_libraries}
+        definitions
         doctest::doctest
         Halide::Halide)
 set_target_properties(color

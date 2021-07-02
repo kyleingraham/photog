@@ -2,6 +2,7 @@
 
 #include "photog/color.h"
 #include "color_utils.h"
+#include "constants.h"
 #include "generator.h"
 
 namespace photog {
@@ -51,6 +52,12 @@ namespace photog {
                                  {0, C}});
 
             average.set_estimates({{0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                input.dim(0).set_stride(C);
+                input.dim(2).set_stride(1);
+            }
         }
     };
 
@@ -65,8 +72,8 @@ namespace photog {
     public:
         // TODO: Can we avoid explicit typing here?
         // TODO: How do we handle 4-channel images?
-        Input <Func> srgb{"srgb", Float(32), 3};
-        Output <Func> linear{"linear", Float(32), 3};
+        Input <Buffer<float>> srgb{"srgb", 3};
+        Output <Buffer<float>> linear{"linear", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
 
@@ -77,13 +84,21 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            srgb.set_estimate(srgb.args()[0], 0, X);
-            srgb.set_estimate(srgb.args()[1], 0, Y);
-            srgb.set_estimate(srgb.args()[2], 0, C);
+            srgb.set_estimates({{0, X},
+                                {0, Y},
+                                {0, C}});
 
             linear.set_estimates({{0, X},
                                   {0, Y},
                                   {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                srgb.dim(0).set_stride(C);
+                srgb.dim(2).set_stride(1);
+                linear.dim(0).set_stride(C);
+                linear.dim(2).set_stride(1);
+            }
         }
     };
 
@@ -96,8 +111,8 @@ namespace photog {
 
     class LinearToSrgb : public photog::Generator<LinearToSrgb> {
     public:
-        Input <Func> linear{"linear", Float(32), 3};
-        Output <Func> srgb{"srgb", Float(32), 3};
+        Input <Buffer<float>> linear{"linear", 3};
+        Output <Buffer<float>> srgb{"srgb", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
 
@@ -108,13 +123,21 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            linear.set_estimate(linear.args()[0], 0, X);
-            linear.set_estimate(linear.args()[1], 0, Y);
-            linear.set_estimate(linear.args()[2], 0, C);
+            linear.set_estimates({{0, X},
+                                  {0, Y},
+                                  {0, C}});
 
             srgb.set_estimates({{0, X},
                                 {0, Y},
                                 {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                linear.dim(0).set_stride(C);
+                linear.dim(2).set_stride(1);
+                srgb.dim(0).set_stride(C);
+                srgb.dim(2).set_stride(1);
+            }
         }
     };
 
@@ -125,9 +148,9 @@ namespace photog {
 
     class RgbToLinear : public photog::Generator<RgbToLinear> {
     public:
-        Input <Func> rgb{"rgb", Float(32), 3};
+        Input <Buffer<float>> rgb{"rgb", 3};
         Input<float> gamma{"gamma"};
-        Output <Func> linear{"linear", Float(32), 3};
+        Output <Buffer<float>> linear{"linear", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
 
@@ -138,15 +161,23 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            rgb.set_estimate(rgb.args()[0], 0, X);
-            rgb.set_estimate(rgb.args()[1], 0, Y);
-            rgb.set_estimate(rgb.args()[2], 0, C);
+            rgb.set_estimates({{0, X},
+                               {0, Y},
+                               {0, C}});
 
             gamma.set_estimate(2.2);
 
             linear.set_estimates({{0, X},
                                   {0, Y},
                                   {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                rgb.dim(0).set_stride(C);
+                rgb.dim(2).set_stride(1);
+                linear.dim(0).set_stride(C);
+                linear.dim(2).set_stride(1);
+            }
         }
     };
 
@@ -157,9 +188,9 @@ namespace photog {
 
     class LinearToRgb : public photog::Generator<LinearToRgb> {
     public:
-        Input <Func> linear{"linear", Float(32), 3};
+        Input <Buffer<float>> linear{"linear", 3};
         Input<float> gamma{"gamma"};
-        Output <Func> rgb{"rgb", Float(32), 3};
+        Output <Buffer<float>> rgb{"rgb", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
 
@@ -170,22 +201,30 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            linear.set_estimate(linear.args()[0], 0, X);
-            linear.set_estimate(linear.args()[1], 0, Y);
-            linear.set_estimate(linear.args()[2], 0, C);
+            linear.set_estimates({{0, X},
+                                  {0, Y},
+                                  {0, C}});
 
             gamma.set_estimate(2.2);
 
             rgb.set_estimates({{0, X},
                                {0, Y},
                                {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                linear.dim(0).set_stride(C);
+                linear.dim(2).set_stride(1);
+                rgb.dim(0).set_stride(C);
+                rgb.dim(2).set_stride(1);
+            }
         }
     };
 
     class SrgbToXyz : public photog::Generator<SrgbToXyz> {
     public:
-        Input <Func> srgb{"srgb", Float(32), 3};
-        Output <Func> xyz{"xyz", Float(32), 3};
+        Input <Buffer<float>> srgb{"srgb", 3};
+        Output <Buffer<float>> xyz{"xyz", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
         Func linear{"linear"};
@@ -202,13 +241,21 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            srgb.set_estimate(srgb.args()[0], 0, X);
-            srgb.set_estimate(srgb.args()[1], 0, Y);
-            srgb.set_estimate(srgb.args()[2], 0, C);
+            srgb.set_estimates({{0, X},
+                                {0, Y},
+                                {0, C}});
 
             xyz.set_estimates({{0, X},
                                {0, Y},
                                {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                srgb.dim(0).set_stride(C);
+                srgb.dim(2).set_stride(1);
+                xyz.dim(0).set_stride(C);
+                xyz.dim(2).set_stride(1);
+            }
         }
     };
 
@@ -228,10 +275,10 @@ namespace photog {
 
     class RgbToXyz : public photog::Generator<RgbToXyz> {
     public:
-        Input <Func> rgb{"rgb", Float(32), 3};
+        Input <Buffer<float>> rgb{"rgb", 3};
         Input<float> gamma{"gamma"};
         Input <Buffer<float>> rgb_to_xyz_xfmr{"xyz_to_rgb_xfmr", 2};
-        Output <Func> xyz{"xyz", Float(32), 3};
+        Output <Buffer<float>> xyz{"xyz", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
 
@@ -243,22 +290,30 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            rgb.set_estimate(rgb.args()[0], 0, X);
-            rgb.set_estimate(rgb.args()[1], 0, Y);
-            rgb.set_estimate(rgb.args()[2], 0, C);
+            rgb.set_estimates({{0, X},
+                               {0, Y},
+                               {0, C}});
 
             gamma.set_estimate(2.2);
 
             xyz.set_estimates({{0, X},
                                {0, Y},
                                {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                rgb.dim(0).set_stride(C);
+                rgb.dim(2).set_stride(1);
+                xyz.dim(0).set_stride(C);
+                xyz.dim(2).set_stride(1);
+            }
         }
     };
 
     class XyzToSrgb : public photog::Generator<XyzToSrgb> {
     public:
-        Input <Func> xyz{"xyz", Float(32), 3};
-        Output <Func> srgb{"srgb", Float(32), 3};
+        Input <Buffer<float>> xyz{"xyz", 3};
+        Output <Buffer<float>> srgb{"srgb", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
         Func linear{"linear"};
@@ -275,13 +330,21 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            xyz.set_estimate(xyz.args()[0], 0, X);
-            xyz.set_estimate(xyz.args()[1], 0, Y);
-            xyz.set_estimate(xyz.args()[2], 0, C);
+            xyz.set_estimates({{0, X},
+                               {0, Y},
+                               {0, C}});
 
             srgb.set_estimates({{0, X},
                                 {0, Y},
                                 {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                xyz.dim(0).set_stride(C);
+                xyz.dim(2).set_stride(1);
+                srgb.dim(0).set_stride(C);
+                srgb.dim(2).set_stride(1);
+            }
         }
     };
 
@@ -303,10 +366,10 @@ namespace photog {
 
     class XyzToRgb : public photog::Generator<XyzToRgb> {
     public:
-        Input <Func> xyz{"xyz", Float(32), 3};
+        Input <Buffer<float>> xyz{"xyz", 3};
         Input<float> gamma{"gamma"};
         Input <Buffer<float>> xyz_to_rgb_xfmr{"xyz_to_rgb_xfmr", 2};
-        Output <Func> rgb{"rgb", Float(32), 3};
+        Output <Buffer<float>> rgb{"rgb", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
 
@@ -318,26 +381,34 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            xyz.set_estimate(xyz.args()[0], 0, X);
-            xyz.set_estimate(xyz.args()[1], 0, Y);
-            xyz.set_estimate(xyz.args()[2], 0, C);
+            xyz.set_estimates({{0, X},
+                               {0, Y},
+                               {0, C}});
 
             gamma.set_estimate(2.2);
 
             rgb.set_estimates({{0, X},
                                {0, Y},
                                {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                xyz.dim(0).set_stride(C);
+                xyz.dim(2).set_stride(1);
+                rgb.dim(0).set_stride(C);
+                rgb.dim(2).set_stride(1);
+            }
         }
     };
 
     class Chromadapt : public photog::Generator<Chromadapt> {
     public:
-        Input <Func> input{"input", Float(32), 3};
+        Input <Buffer<float>> input{"input", 3};
         Input<float> gamma{"gamma"};
         Input <Buffer<float>> rgb_to_xyz_xfmr{"rgb_to_xyz_xfmr", 2};
         Input <Buffer<float>> xyz_to_rgb_xfmr{"xyz_to_rgb_xfmr", 2};
         Input <Buffer<float>> transform{"transform", 2};
-        Output <Func> output{"output", Float(32), 3};
+        Output <Buffer<float>> output{"output", 3};
 
         Func adapted{"adapted"}, xyz{"xyz"};
         Var x{"x"}, y{"y"}, c{"c"};
@@ -359,15 +430,23 @@ namespace photog {
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            input.set_estimate(input.args()[0], 0, X);
-            input.set_estimate(input.args()[1], 0, Y);
-            input.set_estimate(input.args()[2], 0, C);
+            input.set_estimates({{0, X},
+                                 {0, Y},
+                                 {0, C}});
 
             gamma.set_estimate(2.2);
 
             output.set_estimates({{0, X},
                                   {0, Y},
                                   {0, C}});
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                input.dim(0).set_stride(C);
+                input.dim(2).set_stride(1);
+                output.dim(0).set_stride(C);
+                output.dim(2).set_stride(1);
+            }
         }
     };
 } // namespace photog
@@ -382,4 +461,4 @@ HALIDE_REGISTER_GENERATOR(photog::LinearToRgb, photog_linear_to_rgb);
 HALIDE_REGISTER_GENERATOR(photog::XyzToSrgb, photog_xyz_to_srgb);
 HALIDE_REGISTER_GENERATOR(photog::XyzToRgb, photog_xyz_to_rgb);
 HALIDE_REGISTER_GENERATOR(photog::Average, photog_average);
-HALIDE_REGISTER_GENERATOR(photog::Chromadapt, photog_chromadapt_p3_impl);
+HALIDE_REGISTER_GENERATOR(photog::Chromadapt, photog_chromadapt_impl);

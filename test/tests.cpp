@@ -1,6 +1,7 @@
 # define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
 #include <array>
+#include <iostream>
 
 #include "doctest/doctest.h"
 #include "Halide.h"
@@ -8,6 +9,7 @@
 
 #include "photog/color.h"
 #include "color_utils.h"
+#include "utils.h"
 // Available after a CMake build
 #include "photog_srgb_to_linear.h"
 #include "photog_rgb_to_linear.h"
@@ -19,12 +21,52 @@
 #include "photog_xyz_to_rgb.h"
 #include "photog_average.h"
 
+namespace photog {
+    template<typename T>
+    Halide::Runtime::Buffer<T> load_image(const std::string &image_path) {
+        photog::Layout layout = photog::get_layout();
+
+        Halide::Runtime::Buffer<T> image =
+                Halide::Tools::load_and_convert_image(image_path);
+
+        if (layout == Layout::Planar)
+            return image;
+        else if (layout == Layout::Interleaved)
+            return image.copy_to_interleaved();
+        else {
+            std::cerr << "Unsupported image layout " << static_cast<int>(layout)
+                      << " in photog::load_image()." << std::endl;
+            abort();
+        }
+    }
+
+    template<typename T>
+    Halide::Runtime::Buffer<T> get_buffer(int width, int height, int channels) {
+        photog::Layout layout = photog::get_layout();
+
+        if (layout == Layout::Planar)
+            return Halide::Runtime::Buffer<T>{width, height, channels};
+        else if (layout == Layout::Interleaved)
+            return Halide::Runtime::Buffer<float>::make_interleaved(width,
+                                                                    height,
+                                                                    channels);
+        else {
+            std::cerr << "Unsupported image layout " << static_cast<int>(layout)
+                      << " in photog::get_buffer()." << std::endl;
+            abort();
+        }
+    }
+}
+
+// TODO: Refactor tests to get rid of common code.
+
 TEST_CASE ("testing photog_srgb_to_linear") {
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_srgb_to_linear(input, output);
 
@@ -38,30 +80,31 @@ TEST_CASE ("testing photog_srgb_to_linear") {
             CHECK(output(1824, 445, 2) == doctest::Approx(0.002428f));
 }
 
-TEST_CASE ("testing photog_chromadapt_p3") {
-    std::string file_path = R"(images/rgb.jpg)";
+TEST_CASE ("testing photog_chromadapt") {
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
-    auto output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::load_image<float>(image_path);
+    Halide::Runtime::Buffer<float> output =
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
     Halide::Runtime::Buffer<float> source_tristimulus(3);
 
-    photog_chromadapt_p3(input.data(),
-                         input.width(), input.height(),
-                         PhotogWorkingSpace::Srgb,
-                         PhotogChromadaptMethod::Bradford,
-                         PhotogIlluminant::D65,
-                         output.data());
+    photog_chromadapt(input.data(), input.width(), input.height(),
+                      PhotogWorkingSpace::Srgb,
+                      PhotogChromadaptMethod::Bradford,
+                      PhotogIlluminant::D65,
+                      output.data());
 
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
 }
 
-TEST_CASE ("testing photog_chromadapt_diy_p3") {
-    std::string file_path = R"(images/rgb.jpg)";
+TEST_CASE ("testing photog_chromadapt_diy") {
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
-    auto output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::load_image<float>(image_path);
+    Halide::Runtime::Buffer<float> output =
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
     Halide::Runtime::Buffer<float> source_tristimulus(3);
 
     // Pixel that should be white in the destination image.
@@ -74,23 +117,24 @@ TEST_CASE ("testing photog_chromadapt_diy_p3") {
                                photog::get_rgb_to_xyz_xfmr(
                                        PhotogWorkingSpace::Srgb));
 
-    photog_chromadapt_diy_p3(input.data(), input.width(), input.height(),
-                             source_tristimulus.data(),
-                             PhotogWorkingSpace::Srgb,
-                             PhotogChromadaptMethod::Bradford,
-                             photog::get_tristimulus(
-                                     PhotogIlluminant::D65).data(),
-                             output.data());
+    photog_chromadapt_diy(input.data(), input.width(), input.height(),
+                          source_tristimulus.data(),
+                          PhotogWorkingSpace::Srgb,
+                          PhotogChromadaptMethod::Bradford,
+                          photog::get_tristimulus(
+                                  PhotogIlluminant::D65).data(),
+                          output.data());
 
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
 }
 
 TEST_CASE ("testing photog_rgb_to_linear") {
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_rgb_to_linear(input, photog::get_gamma(PhotogWorkingSpace::Srgb),
                          output);
@@ -106,11 +150,12 @@ TEST_CASE ("testing photog_rgb_to_linear") {
 }
 
 TEST_CASE ("testing photog_srgb_to_xyz") {
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_srgb_to_xyz(input, output);
 
@@ -125,11 +170,12 @@ TEST_CASE ("testing photog_srgb_to_xyz") {
 }
 
 TEST_CASE ("testing photog_rgb_to_xyz") {
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_rgb_to_xyz(input,
                       photog::get_gamma(PhotogWorkingSpace::Srgb),
@@ -147,16 +193,18 @@ TEST_CASE ("testing photog_rgb_to_xyz") {
 }
 
 TEST_CASE ("testing photog_linear_to_srgb") {
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> linear =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_srgb_to_linear(input, linear);
 
     Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_linear_to_srgb(linear, output);
 
@@ -171,17 +219,19 @@ TEST_CASE ("testing photog_linear_to_srgb") {
 }
 
 TEST_CASE ("testing photog_linear_to_rgb") {
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> linear =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_rgb_to_linear(input, photog::get_gamma(PhotogWorkingSpace::Srgb),
                          linear);
 
     Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_linear_to_rgb(linear,
                          photog::get_gamma(PhotogWorkingSpace::Srgb),
@@ -198,16 +248,18 @@ TEST_CASE ("testing photog_linear_to_rgb") {
 }
 
 TEST_CASE ("testing photog_xyz_to_srgb") {
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> xyz =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_srgb_to_xyz(input, xyz);
 
     Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_xyz_to_srgb(xyz, output);
 
@@ -222,11 +274,12 @@ TEST_CASE ("testing photog_xyz_to_srgb") {
 }
 
 TEST_CASE ("testing photog_xyz_to_rgb") {
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> xyz =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_rgb_to_xyz(input,
                       photog::get_gamma(PhotogWorkingSpace::Srgb),
@@ -234,7 +287,8 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
                       xyz);
 
     Halide::Runtime::Buffer<float> output =
-            Halide::Runtime::Buffer<float>::make_with_shape_of(input);
+            photog::get_buffer<float>(input.width(), input.height(),
+                                      input.channels());
 
     photog_xyz_to_rgb(xyz,
                       photog::get_gamma(PhotogWorkingSpace::Srgb),
@@ -253,9 +307,9 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
 
 TEST_CASE ("testing photog_average") {
     // TODO: Add test for 64-bit input.
-    std::string file_path = R"(images/rgb.jpg)";
+    std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
-            Halide::Tools::load_and_convert_image(file_path);
+            photog::load_image<float>(image_path);
     Halide::Runtime::Buffer<float> output{input.channels()};
 
     photog_average(input, output);

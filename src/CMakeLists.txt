@@ -7,6 +7,7 @@ add_subdirectory(photog)
 install(TARGETS
         color
         ${COLOR_HALIDE_LIBRARIES}
+        definitions
         ${SHARED_HALIDE_RUNTIME}
         EXPORT photog_targets
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/photog
