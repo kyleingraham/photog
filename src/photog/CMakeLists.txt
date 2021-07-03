@@ -22,6 +22,8 @@ endif ()
 
 # TODO: Can we provide a useful message if this value isn't valid?
 # TODO: Add CMake function for loading CLI/environment arguments.
+# TODO: Allow user to specify variables from their project that includes photog.
+# TODO: Alter dimension estimate names to match layout name.
 if (DEFINED PHOTOG_IMAGE_LAYOUT)
     set(photog_image_layout ${PHOTOG_IMAGE_LAYOUT})
 elseif (DEFINED ENV{PHOTOG_IMAGE_LAYOUT})
@@ -93,8 +95,8 @@ foreach (color_halide_library IN LISTS color_halide_libraries)
                 SCHEDULE ${color_halide_library}_schedule
                 HEADER ${color_halide_library}_header)
     endif ()
-    set_target_properties(${color_halide_library}
-            PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/${${color_halide_library}_header})
+    # We shouldn't need to set install include directories here because we don't use these headers after install
+    # Revisit if these headers are to be exposed to the end-user
 endforeach ()
 
 # Internal access to all generated color Halide libraries
@@ -116,10 +118,9 @@ target_include_directories(color_utils
 target_link_libraries(color_utils
         PRIVATE
         definitions
+        doctest::doctest
         PUBLIC
-        Halide::Halide
-        PRIVATE
-        doctest::doctest)
+        Halide::Halide)
 
 # Public color library (photog::color target)
 add_library(color
@@ -132,7 +133,7 @@ target_include_directories(color
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/photog>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/photog/public>" # Include starts from here
         PRIVATE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 target_link_libraries(color
@@ -143,10 +144,12 @@ target_link_libraries(color
         Halide::Halide)
 set_target_properties(color
         PROPERTIES
-        PUBLIC_HEADER
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/photog/color.h
-        OUTPUT_NAME
-        "photog_color")
+        PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/include/photog/color.h
+        OUTPUT_NAME "photog_color"
+        VERSION ${${CMAKE_PROJECT_NAME}_VERSION}
+        SOVERSION ${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+        INTERFACE_color_MAJOR_VERSION ${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+        COMPATIBLE_INTERFACE_STRING color_MAJOR_VERSION)
 target_compile_definitions(color
         PRIVATE
         DOCTEST_CONFIG_DISABLE)
