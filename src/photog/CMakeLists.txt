@@ -4,26 +4,25 @@ set(color_headers include/photog/color.h)
 set(support_source constants.h generator.h utils.cpp utils.h)
 
 # Global extent estimates for generators
-if (DEFINED PHOTOG_WIDTH_ESTIMATE)
-    set(photog_width_estimate ${PHOTOG_WIDTH_ESTIMATE})
-elseif (DEFINED ENV{PHOTOG_WIDTH_ESTIMATE})
-    set(photog_width_estimate $ENV{PHOTOG_WIDTH_ESTIMATE})
+if (DEFINED PHOTOG_IMAGE_WIDTH_ESTIMATE)
+    set(photog_image_width_estimate ${PHOTOG_IMAGE_WIDTH_ESTIMATE})
+elseif (DEFINED ENV{PHOTOG_IMAGE_WIDTH_ESTIMATE})
+    set(photog_image_width_estimate $ENV{PHOTOG_IMAGE_WIDTH_ESTIMATE})
 else ()
-    set(photog_width_estimate 500)
+    set(photog_image_width_estimate 500)
 endif ()
 
-if (DEFINED PHOTOG_HEIGHT_ESTIMATE)
-    set(photog_height_estimate ${PHOTOG_HEIGHT_ESTIMATE})
-elseif (DEFINED ENV{PHOTOG_HEIGHT_ESTIMATE})
-    set(photog_height_estimate $ENV{PHOTOG_HEIGHT_ESTIMATE})
+if (DEFINED PHOTOG_IMAGE_HEIGHT_ESTIMATE)
+    set(photog_image_height_estimate ${PHOTOG_IMAGE_HEIGHT_ESTIMATE})
+elseif (DEFINED ENV{PHOTOG_IMAGE_HEIGHT_ESTIMATE})
+    set(photog_image_height_estimate $ENV{PHOTOG_IMAGE_HEIGHT_ESTIMATE})
 else ()
-    set(photog_height_estimate 500)
+    set(photog_image_height_estimate 500)
 endif ()
 
 # TODO: Can we provide a useful message if this value isn't valid?
 # TODO: Add CMake function for loading CLI/environment arguments.
 # TODO: Allow user to specify variables from their project that includes photog.
-# TODO: Alter dimension estimate names to match layout name.
 if (DEFINED PHOTOG_IMAGE_LAYOUT)
     set(photog_image_layout ${PHOTOG_IMAGE_LAYOUT})
 elseif (DEFINED ENV{PHOTOG_IMAGE_LAYOUT})
@@ -36,8 +35,8 @@ add_library(definitions INTERFACE)
 target_compile_definitions(definitions
         INTERFACE
         LAYOUT="${photog_image_layout}"
-        X_EXTENT_ESTIMATE=${photog_width_estimate}
-        Y_EXTENT_ESTIMATE=${photog_height_estimate})
+        X_EXTENT_ESTIMATE=${photog_image_width_estimate}
+        Y_EXTENT_ESTIMATE=${photog_image_height_estimate})
 
 # Executable we use for generating color's Halide libraries
 add_executable(color_generators
