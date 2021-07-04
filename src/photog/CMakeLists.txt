@@ -1,41 +1,12 @@
-# TODO: Add CMakePresets.json file.
 set(color_headers include/photog/color.h)
 set(support_source constants.h generator.h utils.cpp utils.h)
-
-# Global extent estimates for generators
-if (DEFINED PHOTOG_IMAGE_WIDTH_ESTIMATE)
-    set(photog_image_width_estimate ${PHOTOG_IMAGE_WIDTH_ESTIMATE})
-elseif (DEFINED ENV{PHOTOG_IMAGE_WIDTH_ESTIMATE})
-    set(photog_image_width_estimate $ENV{PHOTOG_IMAGE_WIDTH_ESTIMATE})
-else ()
-    set(photog_image_width_estimate 500)
-endif ()
-
-if (DEFINED PHOTOG_IMAGE_HEIGHT_ESTIMATE)
-    set(photog_image_height_estimate ${PHOTOG_IMAGE_HEIGHT_ESTIMATE})
-elseif (DEFINED ENV{PHOTOG_IMAGE_HEIGHT_ESTIMATE})
-    set(photog_image_height_estimate $ENV{PHOTOG_IMAGE_HEIGHT_ESTIMATE})
-else ()
-    set(photog_image_height_estimate 500)
-endif ()
-
-# TODO: Can we provide a useful message if this value isn't valid?
-# TODO: Add CMake function for loading CLI/environment arguments.
-# TODO: Allow user to specify variables from their project that includes photog.
-if (DEFINED PHOTOG_IMAGE_LAYOUT)
-    set(photog_image_layout ${PHOTOG_IMAGE_LAYOUT})
-elseif (DEFINED ENV{PHOTOG_IMAGE_LAYOUT})
-    set(photog_image_layout $ENV{PHOTOG_IMAGE_LAYOUT})
-else ()
-    set(photog_image_layout "planar")
-endif ()
 
 add_library(definitions INTERFACE)
 target_compile_definitions(definitions
         INTERFACE
-        LAYOUT="${photog_image_layout}"
-        X_EXTENT_ESTIMATE=${photog_image_width_estimate}
-        Y_EXTENT_ESTIMATE=${photog_image_height_estimate})
+        LAYOUT="${photog_IMAGE_LAYOUT}"
+        X_EXTENT_ESTIMATE=${photog_IMAGE_WIDTH_ESTIMATE}
+        Y_EXTENT_ESTIMATE=${photog_IMAGE_HEIGHT_ESTIMATE})
 
 # Executable we use for generating color's Halide libraries
 add_executable(color_generators
@@ -75,13 +46,13 @@ list(GET color_halide_libraries 0 first_halide_library)
 set(shared_halide_runtime ${first_halide_library}.runtime)
 set(SHARED_HALIDE_RUNTIME ${shared_halide_runtime} PARENT_SCOPE)
 
-# TODO: Can we add optimization flags to these with target properties?
+# TODO: Do optimization flags to affect these targets?
 foreach (color_halide_library IN LISTS color_halide_libraries)
     if (${color_halide_library} STREQUAL ${first_halide_library})
         add_halide_library(${color_halide_library} FROM color_generators
                 GENERATOR ${color_halide_library}
                 AUTOSCHEDULER Halide::Adams2019
-                PARAMS auto_schedule=true layout=${photog_image_layout}
+                PARAMS auto_schedule=true layout=${photog_IMAGE_LAYOUT}
                 SCHEDULE ${color_halide_library}_schedule
                 HEADER ${color_halide_library}_header)
     else ()
@@ -89,11 +60,11 @@ foreach (color_halide_library IN LISTS color_halide_libraries)
                 GENERATOR ${color_halide_library}
                 USE_RUNTIME ${shared_halide_runtime}
                 AUTOSCHEDULER Halide::Adams2019
-                PARAMS auto_schedule=true layout=${photog_image_layout}
+                PARAMS auto_schedule=true layout=${photog_IMAGE_LAYOUT}
                 SCHEDULE ${color_halide_library}_schedule
                 HEADER ${color_halide_library}_header)
     endif ()
-    # We shouldn't need to set install include directories here because we don't use these headers after install
+    # We don't need to set install include directories here because we don't use these headers after install
     # Revisit if these headers are to be exposed to the end-user
 endforeach ()
 
