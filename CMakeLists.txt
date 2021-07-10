@@ -45,6 +45,10 @@ elseif (DEFINED ENV{PHOTOG_IMAGE_LAYOUT})
 else ()
     set(photog_IMAGE_LAYOUT "planar")
 endif ()
+
+message(STATUS "photog image layout:             ${photog_IMAGE_LAYOUT}")
+message(STATUS "photog image width estimate:     ${photog_IMAGE_WIDTH_ESTIMATE}px")
+message(STATUS "photog image height estimate:    ${photog_IMAGE_HEIGHT_ESTIMATE}px")
 # TODO: Add CMakePresets.json file.
 # TODO: Can we provide a useful message if a setting is not valid?
 # TODO: Add CMake function for loading CLI/environment arguments.
