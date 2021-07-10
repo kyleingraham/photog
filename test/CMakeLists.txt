@@ -1,5 +1,9 @@
 # Find doctest
-find_package(doctest REQUIRED)
+find_package(doctest 2 REQUIRED)
+
+# Find JPEG and PNG libraries
+find_package(JPEG 90 REQUIRED)
+find_package(PNG 1 REQUIRED)
 
 # Test executable
 add_executable(tests tests.cpp)
@@ -9,13 +13,9 @@ target_link_libraries(tests
         color_halide_libraries_bundle
         color_utils
         doctest::doctest
-        Halide::Tools)
-
-## Linking for JPEG/PNG libraries is different between OS's
-if (APPLE)
-    target_link_libraries(tests PRIVATE ${JPEG_LIBRARIES})
-    target_link_libraries(tests PRIVATE ${PNG_LIBRARIES})
-endif ()
+        Halide::Tools
+        ${JPEG_LIBRARIES}
+        ${PNG_LIBRARIES})
 
 include(doctest) # enables doctest_discover_tests
 
