@@ -43,4 +43,4 @@ namespace photog {
     }
 }
 
-#endif //PHOTOG_COLOR_UTILS_H
+#endif // PHOTOG_COLOR_UTILS_H

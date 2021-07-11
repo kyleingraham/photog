@@ -239,4 +239,4 @@ TEST_CASE ("testing create_diagonal") {
     }
 }
 
-#endif //PHOTOG_PHOTOG_UTILS_H
+#endif // PHOTOG_PHOTOG_UTILS_H
