@@ -2,8 +2,8 @@
 find_package(doctest 2 REQUIRED)
 
 # Find JPEG and PNG libraries
-find_package(JPEG 90 REQUIRED)
-find_package(PNG 1 REQUIRED)
+find_package(JPEG REQUIRED)
+find_package(PNG REQUIRED)
 
 # Test executable
 add_executable(tests tests.cpp)
