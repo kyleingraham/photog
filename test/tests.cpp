@@ -47,9 +47,9 @@ namespace photog {
         if (layout == Layout::Planar)
             return Halide::Runtime::Buffer<T>{width, height, channels};
         else if (layout == Layout::Interleaved)
-            return Halide::Runtime::Buffer<float>::make_interleaved(width,
-                                                                    height,
-                                                                    channels);
+            return Halide::Runtime::Buffer<T>::make_interleaved(width,
+                                                                height,
+                                                                channels);
         else {
             std::cerr << "Unsupported image layout " << static_cast<int>(layout)
                       << " in photog::get_buffer()." << std::endl;

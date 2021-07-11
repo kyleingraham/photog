@@ -144,15 +144,15 @@ namespace photog {
 
     template<typename T>
     Halide::Runtime::Buffer<T>
-    get_buffer(float *data, int width, int height, int channels) {
+    get_buffer(T *data, int width, int height, int channels) {
         photog::Layout layout = photog::get_layout();
 
         if (layout == Layout::Planar)
             return Halide::Runtime::Buffer<T>{data, {width, height, channels}};
         else if (layout == Layout::Interleaved)
-            return Halide::Runtime::Buffer<float>::make_interleaved(data, width,
-                                                                    height,
-                                                                    channels);
+            return Halide::Runtime::Buffer<T>::make_interleaved(data, width,
+                                                                height,
+                                                                channels);
         else {
             std::cerr << "Unsupported image layout " << static_cast<int>(layout)
                       << " in photog::get_buffer()." << std::endl;
