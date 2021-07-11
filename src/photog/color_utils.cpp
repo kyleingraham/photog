@@ -20,7 +20,7 @@ namespace photog {
 
     float get_gamma(PhotogWorkingSpace working_space) {
         static std::map<PhotogWorkingSpace, float> gammas =
-                {{PhotogWorkingSpace::Srgb, 2.2}};
+                {{PhotogWorkingSpace::Srgb, 2.2f}};
 
         return gammas.at(working_space);
     }
