@@ -173,9 +173,9 @@ TEST_CASE ("testing mul_33_by_31") {
 
     output = photog::mul_33_by_31(a, b);
 
-            CHECK(output(0) == doctest::Approx(12.0));
-            CHECK(output(1) == doctest::Approx(30.0));
-            CHECK(output(2) == doctest::Approx(48.0));
+    CHECK(output(0) == doctest::Approx(12.0));
+    CHECK(output(1) == doctest::Approx(30.0));
+    CHECK(output(2) == doctest::Approx(48.0));
 }
 
 TEST_CASE ("testing mul_33_by_33") {
@@ -199,8 +199,7 @@ TEST_CASE ("testing mul_33_by_33") {
 
     for (int i = 0; i < output_dim; ++i) {
         for (int j = 0; j < output_dim; ++j) {
-                    CHECK(
-                    output(i, j) == doctest::Approx(expected_output[j][i]));
+            CHECK(output(i, j) == doctest::Approx(expected_output[j][i]));
         }
     }
 }
@@ -217,7 +216,7 @@ TEST_CASE ("testing div_vec_by_vec") {
     float expected_output[output_dim]{1.0, 2.0, 5.0};
 
     for (int i = 0; i < output_dim; ++i) {
-                CHECK(output(i) == doctest::Approx(expected_output[i]));
+        CHECK(output(i) == doctest::Approx(expected_output[i]));
     }
 }
 
@@ -233,8 +232,7 @@ TEST_CASE ("testing create_diagonal") {
 
     for (int i = 0; i < output_dim; ++i) {
         for (int j = 0; j < output_dim; ++j) {
-                    CHECK(
-                    output(i, j) == doctest::Approx(expected_output[j][i]));
+            CHECK(output(i, j) == doctest::Approx(expected_output[j][i]));
         }
     }
 }

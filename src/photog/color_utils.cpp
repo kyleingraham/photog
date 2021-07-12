@@ -28,7 +28,17 @@ namespace photog {
     std::array<float, 3>
     get_tristimulus(PhotogIlluminant illuminant) {
         static std::map<PhotogIlluminant, std::array<float, 3>> tristimuli =
-                {{PhotogIlluminant::D65, {0.95047f, 1.0f, 1.08883f}}};
+                {{PhotogIlluminant::A,   {1.09850f, 1.0f, 0.35585f}},
+                 {PhotogIlluminant::B,   {0.99072f, 1.0f, 0.85223f}},
+                 {PhotogIlluminant::C,   {0.98074f, 1.0f, 1.18232f}},
+                 {PhotogIlluminant::D50, {0.96422f, 1.0f, 0.82521f}},
+                 {PhotogIlluminant::D55, {0.95682f, 1.0f, 0.92149f}},
+                 {PhotogIlluminant::D65, {0.95047f, 1.0f, 1.08883f}},
+                 {PhotogIlluminant::D75, {0.94972f, 1.0f, 1.22638f}},
+                 {PhotogIlluminant::E,   {1.0f,     1.0f, 1.0f}},
+                 {PhotogIlluminant::F2,  {0.99186f, 1.0f, 0.67393f}},
+                 {PhotogIlluminant::F7,  {0.95041f, 1.0f, 1.08747f}},
+                 {PhotogIlluminant::F11, {1.00962f, 1.0f, 0.64350f}}};
 
         return tristimuli.at(illuminant);
     }

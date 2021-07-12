@@ -71,13 +71,13 @@ TEST_CASE ("testing photog_srgb_to_linear") {
     photog_srgb_to_linear(input, output);
 
     // 0.04045f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(0.423268f));
-            CHECK(output(0, 0, 1) == doctest::Approx(0.341914f));
-            CHECK(output(0, 0, 2) == doctest::Approx(0.194618f));
+    CHECK(output(0, 0, 0) == doctest::Approx(0.423268f));
+    CHECK(output(0, 0, 1) == doctest::Approx(0.341914f));
+    CHECK(output(0, 0, 2) == doctest::Approx(0.194618f));
     // input(x, y, c) <= 0.04045f
-            CHECK(output(1824, 445, 0) == doctest::Approx(0.003035f));
-            CHECK(output(1824, 445, 1) == doctest::Approx(0.003035f));
-            CHECK(output(1824, 445, 2) == doctest::Approx(0.002428f));
+    CHECK(output(1824, 445, 0) == doctest::Approx(0.003035f));
+    CHECK(output(1824, 445, 1) == doctest::Approx(0.003035f));
+    CHECK(output(1824, 445, 2) == doctest::Approx(0.002428f));
 }
 
 TEST_CASE ("testing photog_chromadapt") {
@@ -92,7 +92,7 @@ TEST_CASE ("testing photog_chromadapt") {
     photog_chromadapt(input.data(), input.width(), input.height(),
                       PhotogWorkingSpace::Srgb,
                       PhotogChromadaptMethod::Bradford,
-                      PhotogIlluminant::D65,
+                      PhotogIlluminant::D50,
                       output.data());
 
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
@@ -122,7 +122,7 @@ TEST_CASE ("testing photog_chromadapt_diy") {
                           PhotogWorkingSpace::Srgb,
                           PhotogChromadaptMethod::Bradford,
                           photog::get_tristimulus(
-                                  PhotogIlluminant::D65).data(),
+                                  PhotogIlluminant::D50).data(),
                           output.data());
 
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
@@ -140,13 +140,13 @@ TEST_CASE ("testing photog_rgb_to_linear") {
                          output);
 
     // 0.04045f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(0.431340f));
-            CHECK(output(0, 0, 1) == doctest::Approx(0.348865f));
-            CHECK(output(0, 0, 2) == doctest::Approx(0.197516f));
+    CHECK(output(0, 0, 0) == doctest::Approx(0.431340f));
+    CHECK(output(0, 0, 1) == doctest::Approx(0.348865f));
+    CHECK(output(0, 0, 2) == doctest::Approx(0.197516f));
     // input(x, y, c) <= 0.04045f
-            CHECK(output(1824, 445, 0) == doctest::Approx(0.000804f));
-            CHECK(output(1824, 445, 1) == doctest::Approx(0.000804f));
-            CHECK(output(1824, 445, 2) == doctest::Approx(0.000492f));
+    CHECK(output(1824, 445, 0) == doctest::Approx(0.000804f));
+    CHECK(output(1824, 445, 1) == doctest::Approx(0.000804f));
+    CHECK(output(1824, 445, 2) == doctest::Approx(0.000492f));
 }
 
 TEST_CASE ("testing photog_srgb_to_xyz") {
@@ -160,13 +160,13 @@ TEST_CASE ("testing photog_srgb_to_xyz") {
     photog_srgb_to_xyz(input, output);
 
     // 0.04045f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(0.331956f));
-            CHECK(output(0, 0, 1) == doctest::Approx(0.348585f));
-            CHECK(output(0, 0, 2) == doctest::Approx(0.233883f));
+    CHECK(output(0, 0, 0) == doctest::Approx(0.331956f));
+    CHECK(output(0, 0, 1) == doctest::Approx(0.348585f));
+    CHECK(output(0, 0, 2) == doctest::Approx(0.233883f));
     // input(x, y, c) <= 0.04045f
-            CHECK(output(1824, 445, 0) == doctest::Approx(0.002775f));
-            CHECK(output(1824, 445, 1) == doctest::Approx(0.002991f));
-            CHECK(output(1824, 445, 2) == doctest::Approx(0.002728f));
+    CHECK(output(1824, 445, 0) == doctest::Approx(0.002775f));
+    CHECK(output(1824, 445, 1) == doctest::Approx(0.002991f));
+    CHECK(output(1824, 445, 2) == doctest::Approx(0.002728f));
 }
 
 TEST_CASE ("testing photog_rgb_to_xyz") {
@@ -183,13 +183,13 @@ TEST_CASE ("testing photog_rgb_to_xyz") {
                       output);
 
     // 0.04045f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(0.338294f));
-            CHECK(output(0, 0, 1) == doctest::Approx(0.355482f));
-            CHECK(output(0, 0, 2) == doctest::Approx(0.237622f));
+    CHECK(output(0, 0, 0) == doctest::Approx(0.338294f));
+    CHECK(output(0, 0, 1) == doctest::Approx(0.355482f));
+    CHECK(output(0, 0, 2) == doctest::Approx(0.237622f));
     // input(x, y, c) <= 0.04045f
-            CHECK(output(1824, 445, 0) == doctest::Approx(0.000708f));
-            CHECK(output(1824, 445, 1) == doctest::Approx(0.000782f));
-            CHECK(output(1824, 445, 2) == doctest::Approx(0.000580f));
+    CHECK(output(1824, 445, 0) == doctest::Approx(0.000708f));
+    CHECK(output(1824, 445, 1) == doctest::Approx(0.000782f));
+    CHECK(output(1824, 445, 2) == doctest::Approx(0.000580f));
 }
 
 TEST_CASE ("testing photog_linear_to_srgb") {
@@ -209,13 +209,13 @@ TEST_CASE ("testing photog_linear_to_srgb") {
     photog_linear_to_srgb(linear, output);
 
     // 0.0031308f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
-            CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
-            CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
+    CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
+    CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
+    CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
     // input(x, y, c) <= 0.0031308f
-            CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
-            CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
-            CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
+    CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
+    CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
+    CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }
 
 TEST_CASE ("testing photog_linear_to_rgb") {
@@ -238,13 +238,13 @@ TEST_CASE ("testing photog_linear_to_rgb") {
                          output);
 
     // 0.0031308f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
-            CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
-            CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
+    CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
+    CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
+    CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
     // input(x, y, c) <= 0.0031308f
-            CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
-            CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
-            CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
+    CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
+    CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
+    CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }
 
 TEST_CASE ("testing photog_xyz_to_srgb") {
@@ -264,13 +264,13 @@ TEST_CASE ("testing photog_xyz_to_srgb") {
     photog_xyz_to_srgb(xyz, output);
 
     // 0.0031308f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
-            CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
-            CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
+    CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
+    CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
+    CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
     // input(x, y, c) <= 0.0031308f
-            CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
-            CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
-            CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
+    CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
+    CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
+    CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }
 
 TEST_CASE ("testing photog_xyz_to_rgb") {
@@ -296,13 +296,13 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
                       output);
 
     // 0.0031308f < input(x, y, c)
-            CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
-            CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
-            CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
+    CHECK(output(0, 0, 0) == doctest::Approx(input(0, 0, 0)));
+    CHECK(output(0, 0, 1) == doctest::Approx(input(0, 0, 1)));
+    CHECK(output(0, 0, 2) == doctest::Approx(input(0, 0, 2)));
     // input(x, y, c) <= 0.0031308f
-            CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
-            CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
-            CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
+    CHECK(output(4550, 711, 0) == doctest::Approx(input(4550, 711, 0)));
+    CHECK(output(4550, 711, 1) == doctest::Approx(input(4550, 711, 1)));
+    CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }
 
 TEST_CASE ("testing photog_average") {
@@ -343,7 +343,7 @@ TEST_CASE ("testing photog_average") {
         ++i;
     }
 
-            CHECK(averages[0] == doctest::Approx(output(0)));
-            CHECK(averages[1] == doctest::Approx(output(1)));
-            CHECK(averages[2] == doctest::Approx(output(2)));
+    CHECK(averages[0] == doctest::Approx(output(0)));
+    CHECK(averages[1] == doctest::Approx(output(1)));
+    CHECK(averages[2] == doctest::Approx(output(2)));
 }
