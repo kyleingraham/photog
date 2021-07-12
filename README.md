@@ -32,7 +32,7 @@ do not exclude smaller or larger images.
 photog depends on the following libraries:
 - Halide (version 12)
 - doctest (version 2)
-- libjpeg (version 90, only if building tests)
+- libjpeg (only if building tests)
 - libpng (only if building tests)
 
 ### Build/Install Commands
