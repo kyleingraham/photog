@@ -13,8 +13,32 @@ enum PhotogChromadaptMethod {
     Bradford
 };
 
+/** Standard illuminants of various vintages.
+ *
+ * References:
+ *  http://www.brucelindbloom.com/Eqn_ChromAdapt.html
+ *  https://en.wikipedia.org/wiki/Standard_illuminant
+ *  https://www.image-engineering.de/library/technotes/753-cie-standard-illuminants
+ *  https://www.xrite.com/service-support/understanding_illuminants
+ *  https://www.xrite.com/service-support/what_illuminants_are_available_in_xrite_hardware_and_software
+ */
 enum PhotogIlluminant {
-    D65
+    /** Tungsten-filament (incandescent) lighting */
+    A,      // 2856K
+    /** Deprecated daylight representations based on A */
+    B,      // direct @ 4874K
+    C,      // shade @ 6774K
+    /** Favoured daylight representations */
+    D50,    // 5003K
+    D55,    // ~5500K
+    D65,    // 6504K
+    D75,    // ~7500K
+    /** Hypothetical equal-energy radiator */
+    E,      // approximated by D illuminant @ 5455K
+    /** Fluorescent lighting */
+    F2,     // semi-broadband "cool-white" @ 4230K
+    F7,     // broadband @ 6500K
+    F11     // tri-band @ 4000K
 };
 
 /** Chromatically adapt RGB input from the given source illuminant to the given
