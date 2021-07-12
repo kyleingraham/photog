@@ -35,6 +35,8 @@ photog depends on the following libraries:
 - libjpeg (only if building tests)
 - libpng (only if building tests)
 
+You will also need a C++17 compiler.
+
 ### Build/Install Commands
 ```shell
 $ git clone https://github.com/kyleingraham/photog.git
