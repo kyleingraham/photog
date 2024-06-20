@@ -1,12 +1,8 @@
-# Find doctest
-find_package(doctest 2 REQUIRED)
-
-# Find JPEG and PNG libraries
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 
-# Test executable
 add_executable(tests tests.cpp)
+target_include_directories(tests PRIVATE ${PNG_INCLUDE_DIRS})
 target_link_libraries(tests
         PRIVATE
         color
