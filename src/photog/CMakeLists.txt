@@ -52,7 +52,7 @@ foreach (color_halide_library IN LISTS color_halide_libraries)
         add_halide_library(${color_halide_library} FROM color_generators
                 GENERATOR ${color_halide_library}
                 AUTOSCHEDULER Halide::Adams2019
-                PARAMS auto_schedule=true layout=${photog_IMAGE_LAYOUT}
+                PARAMS layout=${photog_IMAGE_LAYOUT}
                 SCHEDULE ${color_halide_library}_schedule
                 HEADER ${color_halide_library}_header)
     else ()
@@ -60,7 +60,7 @@ foreach (color_halide_library IN LISTS color_halide_libraries)
                 GENERATOR ${color_halide_library}
                 USE_RUNTIME ${shared_halide_runtime}
                 AUTOSCHEDULER Halide::Adams2019
-                PARAMS auto_schedule=true layout=${photog_IMAGE_LAYOUT}
+                PARAMS layout=${photog_IMAGE_LAYOUT}
                 SCHEDULE ${color_halide_library}_schedule
                 HEADER ${color_halide_library}_header)
     endif ()

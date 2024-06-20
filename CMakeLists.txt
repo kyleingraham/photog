@@ -1,23 +1,36 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.28)
 project(photog
-        VERSION 0.0.1) # Provides access to photog_VERSION and its variants
+        VERSION 0.1.0) # Provides access to photog_VERSION and its variants
 
 include(CTest)
+include(FetchContent)
 
 # Setup language settings
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
-# Find doctest
-find_package(doctest 2 REQUIRED)
+FetchContent_Declare(doctest
+        GIT_REPOSITORY https://github.com/doctest/doctest.git
+        GIT_TAG v2.4.11)
+FetchContent_MakeAvailable(doctest)
+list(APPEND CMAKE_MODULE_PATH ${doctest_SOURCE_DIR}/scripts/cmake)
 
-# Find Halide
 if (APPLE)
     # Prevents latching onto JPEG/PNG libraries vendored within frameworks
     set(CMAKE_FIND_FRAMEWORK LAST)
+
+    if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        FetchContent_Declare(halide
+                URL https://github.com/halide/Halide/releases/download/v17.0.1/Halide-17.0.1-x86-64-osx-52541176253e74467dabc42eeee63d9a62c199f6.tar.gz)
+    else ()
+        FetchContent_Declare(halide
+                URL https://github.com/halide/Halide/releases/download/v17.0.1/Halide-17.0.1-arm-64-osx-52541176253e74467dabc42eeee63d9a62c199f6.tar.gz)
+    endif ()
 endif ()
-find_package(Halide 12 REQUIRED)
+FetchContent_MakeAvailable(halide)
+list(APPEND CMAKE_PREFIX_PATH ${halide_SOURCE_DIR})
+find_package(Halide 17 REQUIRED)
 
 # Global settings
 ## Extent estimates for generators
@@ -49,10 +62,6 @@ endif ()
 message(STATUS "photog image layout:             ${photog_IMAGE_LAYOUT}")
 message(STATUS "photog image width estimate:     ${photog_IMAGE_WIDTH_ESTIMATE}px")
 message(STATUS "photog image height estimate:    ${photog_IMAGE_HEIGHT_ESTIMATE}px")
-# TODO: Add CMakePresets.json file.
-# TODO: Can we provide a useful message if a setting is not valid?
-# TODO: Add CMake function for loading CLI/environment arguments.
-# TODO: Allow user to specify variables from their project that includes photog.
 
 add_subdirectory(src)
 

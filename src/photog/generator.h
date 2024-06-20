@@ -30,7 +30,7 @@ namespace photog {
          * when auto_schedule/manual_schedule respectively are set to true. Auto-scheduling is
          * prioritized over manual schedules.*/
         void schedule() {
-            if (this->auto_schedule) {
+            if (this->using_autoscheduler()) {
                 schedule_auto();
             } else if (manual_schedule) {
                 schedule_manual();
