@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 project(photog
-        VERSION 0.0.1) # Provides access to photog_VERSION and its variants
+        VERSION 0.1.0) # Provides access to photog_VERSION and its variants
 
 include(CTest)
 include(FetchContent)
