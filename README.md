@@ -30,10 +30,10 @@ do not exclude smaller or larger images.
 ## Building
 ### Dependencies
 photog depends on the following libraries:
-- Halide (version 12)
-- doctest (version 2)
-- libjpeg (only if building tests)
-- libpng (only if building tests)
+- Halide 17 (fetched from official repo)
+- doctest 2.4 (fetched from official repo)
+- libjpeg (only if building tests and not fetched automatically)
+- libpng (only if building tests and not fetched automatically)
 
 You will also need a C++17 compiler.
 
