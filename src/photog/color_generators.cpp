@@ -32,7 +32,6 @@ namespace photog {
 
     class Average : public photog::Generator<Average> {
     public:
-        // TODO: How do we vary type for testing?
         Input <Buffer<float>> input{"input", 3};
         Output <Buffer<float>> average{"average", 1};
 
@@ -70,8 +69,6 @@ namespace photog {
 
     class SrgbToLinear : public photog::Generator<SrgbToLinear> {
     public:
-        // TODO: Can we avoid explicit typing here?
-        // TODO: How do we handle 4-channel images?
         Input <Buffer<float>> srgb{"srgb", 3};
         Output <Buffer<float>> linear{"linear", 3};
 
@@ -451,7 +448,6 @@ namespace photog {
     };
 } // namespace photog
 
-// TODO: What is the third argument used for? Stubs and Generator composing?
 HALIDE_REGISTER_GENERATOR(photog::SrgbToLinear, photog_srgb_to_linear);
 HALIDE_REGISTER_GENERATOR(photog::RgbToLinear, photog_rgb_to_linear);
 HALIDE_REGISTER_GENERATOR(photog::SrgbToXyz, photog_srgb_to_xyz);

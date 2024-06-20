@@ -95,7 +95,7 @@ TEST_CASE ("testing photog_chromadapt") {
                       PhotogIlluminant::D50,
                       output.data());
 
-    Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
+    Halide::Tools::convert_and_save_image(output, R"(images/photog_chromadapt.jpg)");
 }
 
 TEST_CASE ("testing photog_chromadapt_diy") {
@@ -111,12 +111,16 @@ TEST_CASE ("testing photog_chromadapt_diy") {
     for (int i = 0; i < 3; ++i)
         source_tristimulus(i) = input(328, 3261, i);
 
+//    source_tristimulus(0) = 0.216881;
+//    source_tristimulus(1) = 0.177514;
+//    source_tristimulus(2) = 0.140344;
+    std::cout << "photog_chromadapt_diy RGB source_tristimulus: " << source_tristimulus(0) << " " << source_tristimulus(1) << " " << source_tristimulus(2) << std::endl;
     source_tristimulus =
             photog::rgb_to_xyz(source_tristimulus,
                                photog::get_gamma(PhotogWorkingSpace::Srgb),
                                photog::get_rgb_to_xyz_xfmr(
                                        PhotogWorkingSpace::Srgb));
-
+    std::cout << "photog_chromadapt_diy source_tristimulus: " << source_tristimulus(0) << " " << source_tristimulus(1) << " " << source_tristimulus(2) << std::endl;
     photog_chromadapt_diy(input.data(), input.width(), input.height(),
                           source_tristimulus.data(),
                           PhotogWorkingSpace::Srgb,
@@ -124,8 +128,8 @@ TEST_CASE ("testing photog_chromadapt_diy") {
                           photog::get_tristimulus(
                                   PhotogIlluminant::D50).data(),
                           output.data());
-
-    Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
+    // TODO: this output is incorrect
+    Halide::Tools::convert_and_save_image(output, R"(images/photog_chromadapt_diy.jpg)");
 }
 
 TEST_CASE ("testing photog_rgb_to_linear") {

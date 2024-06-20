@@ -42,13 +42,15 @@ void photog_chromadapt(float *input, int width, int height,
     Halide::Runtime::Buffer<float> source_est(3);
 
     photog_average(in, source_est);
+    std::cout << "photog_chromadapt RGB source_est: " << source_est(0) << " " << source_est(1) << " " << source_est(2) << std::endl;
     float gamma = photog::get_gamma(working_space);
     Halide::Runtime::Buffer<float> rgb_to_xyz_xfmr =
             photog::get_rgb_to_xyz_xfmr(working_space);
     source_est = photog::rgb_to_xyz(source_est, gamma, rgb_to_xyz_xfmr);
-
+    std::cout << "photog_chromadapt source_est: " << source_est(0) << " " << source_est(1) << " " << source_est(2) << std::endl;
     std::array<float, 3> dest_tristimulus =
             photog::get_tristimulus(dest_illuminant);
+    // How does the tristimulus affect the
 
     photog_chromadapt_diy(input, width, height, source_est.data(),
                           working_space, chromadapt_method,

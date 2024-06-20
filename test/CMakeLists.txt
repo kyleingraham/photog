@@ -1,12 +1,10 @@
-# Find doctest
-find_package(doctest 2 REQUIRED)
-
 # Find JPEG and PNG libraries
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 
 # Test executable
 add_executable(tests tests.cpp)
+target_include_directories(tests PRIVATE ${PNG_INCLUDE_DIRS})
 target_link_libraries(tests
         PRIVATE
         color
@@ -17,7 +15,7 @@ target_link_libraries(tests
         ${JPEG_LIBRARIES}
         ${PNG_LIBRARIES})
 
-include(doctest) # enables doctest_discover_tests
+include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake) # enables doctest_discover_tests
 
 doctest_discover_tests(tests)
 

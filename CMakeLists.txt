@@ -3,6 +3,7 @@ project(photog
         VERSION 0.0.1) # Provides access to photog_VERSION and its variants
 
 include(CTest)
+include(FetchContent)
 
 # Setup language settings
 set(CMAKE_CXX_STANDARD 17)
@@ -10,13 +11,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
 # Find doctest
-find_package(doctest 2 REQUIRED)
+FetchContent_Declare(doctest
+        GIT_REPOSITORY https://github.com/doctest/doctest.git
+        GIT_TAG v2.4.11)
+FetchContent_MakeAvailable(doctest)
 
 # Find Halide
 if (APPLE)
     # Prevents latching onto JPEG/PNG libraries vendored within frameworks
     set(CMAKE_FIND_FRAMEWORK LAST)
 endif ()
+
+# FIND_PACKAGE_ARGS NAMES Halide - available at CMake 3.24
+# TODO: Is there a way to automatically fetch the right Halide release?
+if (APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+    FetchContent_Declare(halide
+            URL https://github.com/halide/Halide/releases/download/v12.0.0/Halide-12.0.0-x86-64-osx-b5a34c33fa92fdaed81aee909b07936d96475b92.tar.gz)
+endif ()
+FetchContent_MakeAvailable(halide)
+list(APPEND CMAKE_PREFIX_PATH ${halide_SOURCE_DIR})
 find_package(Halide 12 REQUIRED)
 
 # Global settings

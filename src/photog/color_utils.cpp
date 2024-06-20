@@ -43,6 +43,7 @@ namespace photog {
         return tristimuli.at(illuminant);
     }
 
+    // M_A
     Halide::Runtime::Buffer<float>
     get_xyz_to_lms_xfmr(PhotogChromadaptMethod chromadapt_method) {
         static std::map<int, std::array<float, 9>> xfmrs =
@@ -53,6 +54,7 @@ namespace photog {
         return copy_to_buffer(xfmrs.at(chromadapt_method), 3);
     }
 
+    // M_A^-1
     Halide::Runtime::Buffer<float>
     get_lms_to_xyz_xfmr(PhotogChromadaptMethod chromadapt_method) {
         static std::map<int, std::array<float, 9>> xfmrs =
@@ -83,6 +85,8 @@ namespace photog {
         return copy_to_buffer(xfmrs.at(working_space), 3);
     }
 
+    // The unit of the tristimulus values X, Y, and Z is often arbitrarily chosen so that Y = 1 or Y = 100 is the brightest white that a color display supports.
+    // https://en.wikipedia.org/wiki/CIE_1931_color_space
     template<typename T>
     Halide::Runtime::Buffer<T>
     normalize_y(const Halide::Runtime::Buffer<T> &xyz_tristimulus, T to) {
@@ -95,10 +99,29 @@ namespace photog {
         Halide::Runtime::Buffer<T> output(output_dim);
         for (int i = 0; i < output_dim; ++i)
             output(i) = xyz_tristimulus(i) * factor;
-
+        std::cout << "Normalized tristimulus: " << output(0) << ", " << output(1) << ", " << output(2) << std::endl;
         return output;
     }
 
+    template<typename T>
+    void print_33(const Halide::Runtime::Buffer<T>& buffer) {
+        assert(buffer.dim(0).extent() == 3);
+        assert(buffer.dim(0).extent() == 3);
+
+        std::cout << "[";
+
+        for (int i = 0; i < buffer.dim(0).extent(); ++i) {
+            for (int j = 0; j < buffer.dim(1).extent(); ++j) {
+                std::cout << buffer(i, j) << " ";
+            }
+            std::cout << "; ";
+        }
+
+        std::cout << "]" << std::endl;
+    }
+
+    // Does the work of figuring out how we shift image to average gray
+    // These are our correction factors
     Halide::Runtime::Buffer<float>
     create_transform(PhotogChromadaptMethod chromadapt_method,
                      const Halide::Runtime::Buffer<float> &source_tristimulus,
@@ -118,13 +141,15 @@ namespace photog {
                                                          100.0f));
         auto lms_gain =
                 photog::div_vec_by_vec(lms_dest, lms_source);
+        std::cout << "LMS gain: " << lms_gain(0) << ", " << lms_gain(1) << ", " << lms_gain(2) << std::endl;
         auto lms_gain_diagonal =
                 photog::create_diagonal(lms_gain);
         auto transform_temp =
                 photog::mul_33_by_33(lms_to_xyz_xfmr, lms_gain_diagonal);
         auto transform =
                 photog::mul_33_by_33(transform_temp, xyz_to_lms_xfmr);
-
-        return transform;
+        std::cout << "transform: ";
+        print_33(transform);
+        return std::move(transform);
     }
 }
