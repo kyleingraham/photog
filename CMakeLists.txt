@@ -22,15 +22,15 @@ if (APPLE)
 
     if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
         FetchContent_Declare(halide
-                URL https://github.com/halide/Halide/releases/download/v12.0.0/Halide-12.0.0-x86-64-osx-b5a34c33fa92fdaed81aee909b07936d96475b92.tar.gz)
+                URL https://github.com/halide/Halide/releases/download/v17.0.1/Halide-17.0.1-x86-64-osx-52541176253e74467dabc42eeee63d9a62c199f6.tar.gz)
     else ()
         FetchContent_Declare(halide
-                URL https://github.com/halide/Halide/releases/download/v12.0.0/Halide-12.0.0-arm-64-osx-b5a34c33fa92fdaed81aee909b07936d96475b92.tar.gz)
+                URL https://github.com/halide/Halide/releases/download/v17.0.1/Halide-17.0.1-arm-64-osx-52541176253e74467dabc42eeee63d9a62c199f6.tar.gz)
     endif ()
 endif ()
 FetchContent_MakeAvailable(halide)
 list(APPEND CMAKE_PREFIX_PATH ${halide_SOURCE_DIR})
-find_package(Halide 12 REQUIRED)
+find_package(Halide 17 REQUIRED)
 
 # Global settings
 ## Extent estimates for generators
