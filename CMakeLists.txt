@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.28)
 project(photog
         VERSION 0.0.1) # Provides access to photog_VERSION and its variants
 
@@ -15,7 +15,6 @@ FetchContent_Declare(doctest
         GIT_TAG v2.4.11)
 FetchContent_MakeAvailable(doctest)
 list(APPEND CMAKE_MODULE_PATH ${doctest_SOURCE_DIR}/scripts/cmake)
-find_package(doctest)
 
 if (APPLE)
     # Prevents latching onto JPEG/PNG libraries vendored within frameworks

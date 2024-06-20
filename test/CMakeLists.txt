@@ -14,7 +14,6 @@ target_link_libraries(tests
         ${PNG_LIBRARIES})
 
 include(doctest) # enables doctest_discover_tests
-
 doctest_discover_tests(tests)
 
 ## Copy non-source test files to test executable working directory
