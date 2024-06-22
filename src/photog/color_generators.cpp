@@ -68,29 +68,31 @@ namespace photog {
                                           2.4f));
     }
 
-    class SrgbToLinear : public photog::Generator<SrgbToLinear> {
+    class SrgbToLinear : public Generator<SrgbToLinear> {
     public:
-        // TODO: Can we avoid explicit typing here?
-        // TODO: How do we handle 4-channel images?
-        Input <Buffer<float>> srgb{"srgb", 3};
-        Output <Buffer<float>> linear{"linear", 3};
+        Input<Buffer<float> > srgb{"srgb", 3};
+        Output<Buffer<float> > linear{"linear", 3};
 
         Var x{"x"}, y{"y"}, c{"c"};
 
         void generate() {
-            linear(x, y, c) = photog::srgb_to_linear(srgb(x, y, c));
+            linear(x, y, c) = srgb_to_linear(srgb(x, y, c));
         }
 
         void schedule_auto() override {
             const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
 
-            srgb.set_estimates({{0, X},
-                                {0, Y},
-                                {0, C}});
+            srgb.set_estimates({
+                {0, X},
+                {0, Y},
+                {0, C}
+            });
 
-            linear.set_estimates({{0, X},
-                                  {0, Y},
-                                  {0, C}});
+            linear.set_estimates({
+                {0, X},
+                {0, Y},
+                {0, C}
+            });
 
             if (layout == Layout::Planar) {
             } else if (layout == Layout::Interleaved) {
