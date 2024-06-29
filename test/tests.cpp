@@ -20,6 +20,8 @@
 #include "photog_xyz_to_srgb.h"
 #include "photog_xyz_to_rgb.h"
 #include "photog_average.h"
+#include "photog_zero_mask.h"
+#include "photog_toroidal_histogram.h"
 
 namespace photog {
     template<typename T>
@@ -31,13 +33,13 @@ namespace photog {
 
         if (layout == Layout::Planar)
             return image;
-        else if (layout == Layout::Interleaved)
+
+        if (layout == Layout::Interleaved)
             return image.copy_to_interleaved();
-        else {
-            std::cerr << "Unsupported image layout " << static_cast<int>(layout)
-                      << " in photog::load_image()." << std::endl;
-            abort();
-        }
+
+        std::cerr << "Unsupported image layout " << static_cast<int>(layout)
+                << " in photog::load_image()." << std::endl;
+        abort();
     }
 
     template<typename T>
@@ -46,21 +48,125 @@ namespace photog {
 
         if (layout == Layout::Planar)
             return Halide::Runtime::Buffer<T>{width, height, channels};
-        else if (layout == Layout::Interleaved)
-            return Halide::Runtime::Buffer<T>::make_interleaved(width,
-                                                                height,
-                                                                channels);
-        else {
-            std::cerr << "Unsupported image layout " << static_cast<int>(layout)
-                      << " in photog::get_buffer()." << std::endl;
-            abort();
-        }
+
+        if (layout == Layout::Interleaved)
+            return Halide::Runtime::Buffer<T>::make_interleaved(width, height, channels);
+
+        std::cerr << "Unsupported image layout " << static_cast<int>(layout)
+                << " in photog::get_buffer()." << std::endl;
+        abort();
     }
 }
 
-// TODO: Refactor tests to get rid of common code.
+template<typename T>
+struct Stats {
+    T min = 0;
+    T max = 0;
+    T sum = 0;
+};
 
-TEST_CASE ("testing photog_srgb_to_linear") {
+/**
+ * Get min, max, and sum values for a 2D Halide buffer.
+ */
+template<typename T>
+Stats<T> get_stats(const Halide::Runtime::Buffer<T> &buffer) {
+    T value;
+    Stats<T> stats;
+
+    for (int i = 0; i < buffer.width(); ++i) {
+        for (int j = 0; j < buffer.height(); ++j) {
+            value = buffer(i, j);
+            stats.sum += value;
+
+            if (value < stats.min) {
+                stats.min = value;
+            }
+
+            if (stats.max < value) {
+                stats.max = value;
+            }
+        }
+    }
+
+    return stats;
+}
+
+TEST_CASE("testing photog_zero_mask") {
+    std::string image_path = R"(images/cheng/preprocessed/Cheng/Canon1DsMkIII/000001.png)";
+    Halide::Runtime::Buffer<float> input = photog::load_image<float>(image_path);
+    Halide::Runtime::Buffer<int> mask = Halide::Runtime::Buffer<int>{input.width(), input.height()};
+
+    photog_zero_mask(input, mask);
+    auto [min, max, sum] = get_stats(mask);
+    CHECK_EQ(min, 0);
+    CHECK_EQ(max, 1);
+    // Do we have the same number of masked pixels?
+    CHECK_EQ(sum, 93761);
+    // Spot checks
+    CHECK_EQ(mask(82, 83), 0);
+    CHECK_EQ(mask(0, 0), 1);
+
+    /*
+     * To generate test data run the following in MATLAB using the Google ffcc repo:
+     *
+     *   cd('ffcc'); % Replace 'ffcc' with where you have downloaded the repo
+     *   addpath(genpath('.'));
+     *   img = imread('./data/cheng/preprocessed/Cheng/Canon1DsMkIII/000001.png');
+     *   I_valid = all(img > 0,3)
+     *   % Sum
+     *   mask_sum = sum(I_valid(:))
+     *   % Non-zero value coordinates
+     *   [c1, c2] = ind2sub(size(I_valid(:,:)), find(I_valid(:,:), 1, "first"))
+     *   % Use image editor to find zero region then verify in MATLAB
+     *   img(83,84) == 0
+     *   I_valid(83,84) == 0
+     */
+}
+
+TEST_CASE("testing photog_toroidal_histogram") {
+    std::string image_path = R"(images/cheng/preprocessed/Cheng/Canon1DsMkIII/000001.png)";
+    Halide::Runtime::Buffer<float> input = photog::load_image<float>(image_path);
+    Halide::Runtime::Buffer<int> mask = Halide::Runtime::Buffer<int>{input.width(), input.height()};
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>{photog::histogram_bin_count, photog::histogram_bin_count};
+
+    mask.fill(1);
+    photog_toroidal_histogram(input, mask, output);
+
+    auto [min, max, sum] = get_stats(output);
+
+    // Is the histogram normalized?
+    CHECK(sum == doctest::Approx(1.0f));
+    // Do we match the Google ffcc reference?
+    CHECK(min == doctest::Approx(0.0f));
+    CHECK(max == doctest::Approx(0.220017f));
+    CHECK(output(29, 36) == doctest::Approx(1.06654e-05f)); // Spot check
+    CHECK(output(0, 0) == doctest::Approx(min));
+    CHECK(output(23, 46) == doctest::Approx(max));
+
+    /*
+     * To generate test data run the following in MATLAB using the Google ffcc repo:
+     *
+     *   cd('ffcc'); % Replace 'ffcc' with where you have downloaded the repo
+     *   addpath(genpath('.'));
+     *   params = LoadProjectParams('ChengCanon1DsMkIII');
+     *   img = imread('./data/cheng/preprocessed/Cheng/Canon1DsMkIII/000001.png');
+     *   img_valid = true(size(img, 1), size(img, 2))
+     *   [X, img_channels] = FeaturizeImage(img, img_valid, params);
+     *   % Spot check value and coordinates
+     *   [c1, c2, c3] = ind2sub(size(X(:,:,1)), find(X(:,:,1), 1, "first"))
+     *   spot_check_val = X(c1, c2, c3)
+     *   X1 = X(:,:,1)
+     *   % Maximum value and coordinates
+     *   [max_val, linear_coord] = max(X1(:))
+     *   [max_x, max_y] = ind2sub(size(X1), linear_coord);
+     *   % Minimum value and coordinates
+     *   [min_val, linear_coord] = min(X1(:))
+     *   [min_x, min_y] = ind2sub(size(X1), linear_coord);
+     */
+}
+
+TEST_CASE("testing photog_srgb_to_linear") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -80,7 +186,7 @@ TEST_CASE ("testing photog_srgb_to_linear") {
     CHECK(output(1824, 445, 2) == doctest::Approx(0.002428f));
 }
 
-TEST_CASE ("testing photog_chromadapt") {
+TEST_CASE("testing photog_chromadapt") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -98,7 +204,7 @@ TEST_CASE ("testing photog_chromadapt") {
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
 }
 
-TEST_CASE ("testing photog_chromadapt_diy") {
+TEST_CASE("testing photog_chromadapt_diy") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -114,21 +220,19 @@ TEST_CASE ("testing photog_chromadapt_diy") {
     source_tristimulus =
             photog::rgb_to_xyz(source_tristimulus,
                                photog::get_gamma(PhotogWorkingSpace::Srgb),
-                               photog::get_rgb_to_xyz_xfmr(
-                                       PhotogWorkingSpace::Srgb));
+                               photog::get_rgb_to_xyz_xfmr(PhotogWorkingSpace::Srgb));
 
     photog_chromadapt_diy(input.data(), input.width(), input.height(),
                           source_tristimulus.data(),
                           PhotogWorkingSpace::Srgb,
                           PhotogChromadaptMethod::Bradford,
-                          photog::get_tristimulus(
-                                  PhotogIlluminant::D50).data(),
+                          photog::get_tristimulus(PhotogIlluminant::D50).data(),
                           output.data());
 
     Halide::Tools::convert_and_save_image(output, R"(images/out.jpg)");
 }
 
-TEST_CASE ("testing photog_rgb_to_linear") {
+TEST_CASE("testing photog_rgb_to_linear") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -149,7 +253,7 @@ TEST_CASE ("testing photog_rgb_to_linear") {
     CHECK(output(1824, 445, 2) == doctest::Approx(0.000492f));
 }
 
-TEST_CASE ("testing photog_srgb_to_xyz") {
+TEST_CASE("testing photog_srgb_to_xyz") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -169,7 +273,7 @@ TEST_CASE ("testing photog_srgb_to_xyz") {
     CHECK(output(1824, 445, 2) == doctest::Approx(0.002728f));
 }
 
-TEST_CASE ("testing photog_rgb_to_xyz") {
+TEST_CASE("testing photog_rgb_to_xyz") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -192,7 +296,7 @@ TEST_CASE ("testing photog_rgb_to_xyz") {
     CHECK(output(1824, 445, 2) == doctest::Approx(0.000580f));
 }
 
-TEST_CASE ("testing photog_linear_to_srgb") {
+TEST_CASE("testing photog_linear_to_srgb") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -218,7 +322,7 @@ TEST_CASE ("testing photog_linear_to_srgb") {
     CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }
 
-TEST_CASE ("testing photog_linear_to_rgb") {
+TEST_CASE("testing photog_linear_to_rgb") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -247,7 +351,7 @@ TEST_CASE ("testing photog_linear_to_rgb") {
     CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }
 
-TEST_CASE ("testing photog_xyz_to_srgb") {
+TEST_CASE("testing photog_xyz_to_srgb") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -273,7 +377,7 @@ TEST_CASE ("testing photog_xyz_to_srgb") {
     CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }
 
-TEST_CASE ("testing photog_xyz_to_rgb") {
+TEST_CASE("testing photog_xyz_to_rgb") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -305,8 +409,7 @@ TEST_CASE ("testing photog_xyz_to_rgb") {
     CHECK(output(4550, 711, 2) == doctest::Approx(input(4550, 711, 2)));
 }
 
-TEST_CASE ("testing photog_average") {
-    // TODO: Add test for 64-bit input.
+TEST_CASE("testing photog_average") {
     std::string image_path = R"(images/rgb.jpg)";
     Halide::Runtime::Buffer<float> input =
             photog::load_image<float>(image_path);
@@ -338,7 +441,7 @@ TEST_CASE ("testing photog_average") {
 
     float averages[3]{0};
     int i{0};
-    for (auto &sum:sums) {
+    for (auto &sum: sums) {
         averages[i] = sum / input.number_of_elements();
         ++i;
     }
