@@ -554,8 +554,7 @@ namespace photog {
                               histogram_min_intensity < image(x, y, 2);
 
         Halide::Func mask{"mask_toroidal_histogram"};
-        mask(x, y) = Halide::select(above_min_intensity, 1, 0) &
-                     external_mask(x, y);
+        mask(x, y) = Halide::select(above_min_intensity, 1, 0) & external_mask(x, y);
 
         // Reference Psplat2.m
         Halide::Func u{"u_toroidal_histogram"}, v{"v_toroidal_histogram"};
