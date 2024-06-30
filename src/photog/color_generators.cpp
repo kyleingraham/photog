@@ -487,24 +487,26 @@ namespace photog {
     /**
      * Mask the zero-pixels in a given 3-channel image. Zero-pixels are zero in all channels.
      */
-    Halide::Expr zero_mask(const Halide::Func &image) {
-        Halide::Var x{"x"}, y{"y"};
-        return Halide::select(
+    Halide::Func zero_mask(const Halide::Func &image) {
+        Halide::Var x{"x_zero_mask"}, y{"y_zero_mask"};
+        Halide::Func mask{"mask_zero_mask"};
+        mask(x, y) = Halide::select(
             0 < image(x, y, 0) &&
             0 < image(x, y, 1) &&
             0 < image(x, y, 2),
             1,
             0
         );
+        return mask;
     }
 
     class ZeroMask : public Generator<ZeroMask> {
     public:
-        Input<Buffer<float> > input{"input", 3};
-        Output<Buffer<int> > output{"output", 2};
+        Input<Buffer<float> > input{"input_ZeroMask", 3};
+        Output<Buffer<int> > output{"output_ZeroMask", 2};
 
         void generate() {
-            output(x, y) = zero_mask(input);
+            output(x, y) = zero_mask(input)(x, y);
         }
 
         void schedule_auto() override {
@@ -531,7 +533,7 @@ namespace photog {
         }
 
     private:
-        Halide::Var x{"x"}, y{"y"};
+        Halide::Var x{"x_ZeroMask"}, y{"y_ZeroMask"};
     };
 
     /**
@@ -545,21 +547,21 @@ namespace photog {
     Halide::Func toroidal_histogram(const Halide::Func &image, const Halide::Expr &image_width,
                                     const Halide::Expr &image_height, const Halide::Func &external_mask) {
         // Reference FeatureizeImage.m
-        Halide::Var x{"x"}, y{"y"};
-        Halide::Expr above_min_intensity{"above_min_intensity"};
+        Halide::Var x{"x_toroidal_histogram"}, y{"y_toroidal_histogram"};
+        Halide::Expr above_min_intensity{"above_min_intensity_toroidal_histogram"};
         above_min_intensity = histogram_min_intensity < image(x, y, 0) &&
                               histogram_min_intensity < image(x, y, 1) &&
                               histogram_min_intensity < image(x, y, 2);
 
-        Halide::Func mask{"mask"};
+        Halide::Func mask{"mask_toroidal_histogram"};
         mask(x, y) = Halide::select(above_min_intensity, 1, 0) &
                      external_mask(x, y);
 
         // Reference Psplat2.m
-        Halide::Func u{"u"}, v{"v"};
+        Halide::Func u{"u_toroidal_histogram"}, v{"v_toroidal_histogram"};
         Halide::RDom r_image{
             {{0, image_width}, {0, image_height}},
-            "r_image"
+            "r_image_toroidal_histogram"
         };
         u(x, y) = 0.0f;
         u(r_image.x, r_image.y) = select(
@@ -574,7 +576,7 @@ namespace photog {
             0.0f
         );
 
-        Halide::Expr e_hist_i{"e_hist_i"}, e_hist_j{"e_hist_j"};
+        Halide::Expr e_hist_i{"e_hist_i_toroidal_histogram"}, e_hist_j{"e_hist_j_toroidal_histogram"};
         // Cast to an int because Halide::round produces a float. float % int is not supported.
         e_hist_i = Halide::cast<int>(
                        round((u(r_image.x, r_image.y) - histogram_starting_uv) / histogram_bin_width)
@@ -583,8 +585,8 @@ namespace photog {
                        round((v(r_image.x, r_image.y) - histogram_starting_uv) / histogram_bin_width)
                    ) % histogram_bin_count;
 
-        Halide::Var hist_i{"hist_i"}, hist_j{"hist_j"};
-        Halide::Func histogram{"histogram"};
+        Halide::Var hist_i{"hist_i_toroidal_histogram"}, hist_j{"hist_j_toroidal_histogram"};
+        Halide::Func histogram{"histogram_toroidal_histogram"};
         histogram(hist_i, hist_j) = 0.0f;
         histogram(e_hist_i, e_hist_j) += select(
             mask(r_image.x, r_image.y) == 1,
@@ -595,12 +597,13 @@ namespace photog {
         // Reference FeatureizeImage.m
         // Normalize histogram
         Halide::Expr epsilon = 2.2204e-16f;
-        Halide::Func histogram_sum{"histogram_sum"}, normalized_histogram("normalized_histogram");;
+        Halide::Func histogram_sum{"histogram_sum_toroidal_histogram"},
+                normalized_histogram("normalized_histogram_toroidal_histogram");;
         Halide::RDom r_hist{
             {{0, histogram_bin_count}, {0, histogram_bin_count}},
-            "r_hist"
+            "r_hist_toroidal_histogram"
         };
-        histogram_sum() = Halide::sum(histogram(r_hist.x, r_hist.y));
+        histogram_sum() = Halide::sum(histogram(r_hist.x, r_hist.y), "sum_toroidal_histogram");
         normalized_histogram(x, y) = histogram(x, y) / Halide::max(epsilon, histogram_sum());
 
         return normalized_histogram;
@@ -608,13 +611,13 @@ namespace photog {
 
     class ToroidalHistogram : public Generator<ToroidalHistogram> {
     public:
-        Input<Buffer<float> > input{"input", 3};
-        Input<Buffer<int> > input_mask{"input_mask", 2};
-        Output<Buffer<float> > output{"output", 2};
+        Input<Buffer<float> > input{"input_ToroidalHistogram", 3};
+        Input<Buffer<int> > mask{"mask_ToroidalHistogram", 2};
+        Output<Buffer<float> > output{"output_ToroidalHistogram", 2};
 
         void generate() {
             output(x, y) = toroidal_histogram(
-                input, input.width(), input.height(), input_mask
+                input, input.width(), input.height(), mask
             )(x, y);
         }
 
@@ -627,7 +630,7 @@ namespace photog {
                 {0, C}
             });
 
-            input_mask.set_estimates({
+            mask.set_estimates({
                 {0, X},
                 {0, Y}
             });
@@ -647,7 +650,7 @@ namespace photog {
         }
 
     private:
-        Halide::Var x{"x"}, y{"y"};
+        Halide::Var x{"x_ToroidalHistogram"}, y{"y_ToroidalHistogram"};
     };
 } // namespace photog
 
