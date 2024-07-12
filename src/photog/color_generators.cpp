@@ -546,7 +546,7 @@ namespace photog {
      */
     Halide::Func toroidal_histogram(const Halide::Func &image, const Halide::Expr &image_width,
                                     const Halide::Expr &image_height, const Halide::Func &external_mask) {
-        // Reference FeatureizeImage.m
+        // Reference ffcc/internal/FeatureizeImage.m
         Halide::Var x{"x_toroidal_histogram"}, y{"y_toroidal_histogram"};
         Halide::Expr above_min_intensity{"above_min_intensity_toroidal_histogram"};
         above_min_intensity = histogram_min_intensity < image(x, y, 0) &&
@@ -554,26 +554,23 @@ namespace photog {
                               histogram_min_intensity < image(x, y, 2);
 
         Halide::Func mask{"mask_toroidal_histogram"};
-        mask(x, y) = Halide::select(above_min_intensity, 1, 0) & external_mask(x, y); // TODO: & or &&
-        // TODO: get rid of selects
-        // Reference Psplat2.m
+        // & required here. && fails checks against reference.
+        mask(x, y) = Halide::select(above_min_intensity, 1, 0) & external_mask(x, y);
+        // Reference ffcc/internal/Psplat2.m
         Halide::Func u{"u_toroidal_histogram"}, v{"v_toroidal_histogram"};
         Halide::RDom r_image{
             {{0, image_width}, {0, image_height}},
             "r_image_toroidal_histogram"
         };
         u(x, y) = 0.0f;
-        u(r_image.x, r_image.y) = select(
-            mask(r_image.x, r_image.y) == 1,
-            log(image(r_image.x, r_image.y, 1)) - log(image(r_image.x, r_image.y, 0)),
-            0.0f
-        );
+        u(r_image.x, r_image.y) =
+                (log(image(r_image.x, r_image.y, 1)) - log(image(r_image.x, r_image.y, 0))) *
+                mask(r_image.x, r_image.y);
+
         v(x, y) = 0.0f;
-        v(r_image.x, r_image.y) = select(
-            mask(r_image.x, r_image.y) == 1,
-            log(image(r_image.x, r_image.y, 1)) - log(image(r_image.x, r_image.y, 2)),
-            0.0f
-        );
+        v(r_image.x, r_image.y) =
+                (log(image(r_image.x, r_image.y, 1)) - log(image(r_image.x, r_image.y, 2))) *
+                mask(r_image.x, r_image.y);
 
         Halide::Expr e_hist_i{"e_hist_i_toroidal_histogram"}, e_hist_j{"e_hist_j_toroidal_histogram"};
         // Cast to an int because Halide::round produces a float. float % int is not supported.
@@ -586,14 +583,9 @@ namespace photog {
 
         Halide::Var hist_i{"hist_i_toroidal_histogram"}, hist_j{"hist_j_toroidal_histogram"};
         Halide::Func histogram{"histogram_toroidal_histogram"};
-        histogram(hist_i, hist_j) = 0.0f;
-        histogram(e_hist_i, e_hist_j) += select(
-            mask(r_image.x, r_image.y) == 1,
-            1.0f,
-            0.0f
-        );
+        histogram(e_hist_i, e_hist_j) += mask(r_image.x, r_image.y);
 
-        // Reference FeatureizeImage.m
+        // Reference ffcc/internal/FeatureizeImage.m
         // Normalize histogram
         Halide::Func histogram_sum{"histogram_sum_toroidal_histogram"},
                 normalized_histogram("normalized_histogram_toroidal_histogram");;
