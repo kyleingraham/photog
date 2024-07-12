@@ -554,8 +554,8 @@ namespace photog {
                               histogram_min_intensity < image(x, y, 2);
 
         Halide::Func mask{"mask_toroidal_histogram"};
-        mask(x, y) = Halide::select(above_min_intensity, 1, 0) & external_mask(x, y);
-
+        mask(x, y) = Halide::select(above_min_intensity, 1, 0) & external_mask(x, y); // TODO: & or &&
+        // TODO: get rid of selects
         // Reference Psplat2.m
         Halide::Func u{"u_toroidal_histogram"}, v{"v_toroidal_histogram"};
         Halide::RDom r_image{
@@ -595,7 +595,6 @@ namespace photog {
 
         // Reference FeatureizeImage.m
         // Normalize histogram
-        Halide::Expr epsilon = 2.2204e-16f;
         Halide::Func histogram_sum{"histogram_sum_toroidal_histogram"},
                 normalized_histogram("normalized_histogram_toroidal_histogram");;
         Halide::RDom r_hist{
@@ -651,6 +650,83 @@ namespace photog {
     private:
         Halide::Var x{"x_ToroidalHistogram"}, y{"y_ToroidalHistogram"};
     };
+
+    Halide::Func local_absolute_deviation(const Halide::Func &image, const Halide::Func &mask,
+                                          const Halide::Region &bounds) {
+        // Reference ffcc/internal/MaskedLocalAbsoluteDeviation.m.
+        Halide::Var x{"x_local_absolute_deviation"}, y{"y_local_absolute_deviation"}, c{"c_local_absolute_deviation"};
+
+        // Ensure each element in the image and mask have a perimeter by using repeating edges.
+        Halide::Func edge_image = Halide::BoundaryConditions::repeat_edge(image, bounds);
+        Halide::Func edge_mask = Halide::BoundaryConditions::repeat_edge(mask, bounds);
+
+        Halide::Func numerator{"numerator_local_absolute_deviation"};
+        Halide::RDom r{-1, 3, -1, 3, "r_local_absolute_deviation"}; // 3x3 region
+
+        // Sum absolute differences of perimeter pixels from the centre.
+        numerator(x, y, c) += Halide::abs(
+            edge_image(x + r.x, y + r.y, c) - edge_image(x, y, c) // Centre pixel excluded via subtraction.
+        ) * edge_mask(x + r.x, y + r.y); // Exlude masked pixels in edge-repeated mask
+
+        // Reduce a sum for each centre pixel by counting every unmasked perimeter pixel in region.
+        Halide::Func denominator{"denominator_local_absolute_deviation"};
+        denominator(x, y) = epsilon; // Prevent division by zero
+        denominator(x, y) += Halide::cast<float>(
+            edge_mask(x + r.x, y + r.y) // Count unmasked pixels
+        ) * !(r.x == 0 && r.y == 0); // Prevent counting the centre pixel
+
+        Halide::Func lad{"lad_local_absolute_deviation"};
+        lad(x, y, c) = numerator(x, y, c) / denominator(x, y);
+
+        return lad;
+    }
+
+    class LocalAbsoluteDeviation : public Generator<LocalAbsoluteDeviation> {
+    public:
+        Input<Buffer<float> > input{"input_LocalAbsoluteDeviation", 3};
+        Input<Buffer<int> > mask{"mask_LocalAbsoluteDeviation", 2};
+        Output<Buffer<float> > output{"output_LocalAbsoluteDeviation", 3};
+
+        Halide::Var x{"x_LocalAbsoluteDeviation"}, y{"y_LocalAbsoluteDeviation"},
+                c{"c_LocalAbsoluteDeviation"};
+
+        void generate() {
+            output(x, y, c) = local_absolute_deviation(
+                input,
+                mask,
+                {{input.dim(0).min(), input.dim(0).extent()}, {input.dim(1).min(), input.dim(1).extent()}}
+            )(x, y, c);
+        }
+
+        void schedule_auto() override {
+            const int X{x_extent_estimate}, Y{y_extent_estimate}, C{3};
+
+            input.set_estimates({
+                {0, X},
+                {0, Y},
+                {0, C}
+            });
+
+            mask.set_estimates({
+                {0, X},
+                {0, Y}
+            });
+
+            output.set_estimates({
+                {0, X},
+                {0, Y},
+                {0, C}
+            });
+
+            if (layout == Layout::Planar) {
+            } else if (layout == Layout::Interleaved) {
+                input.dim(0).set_stride(C);
+                input.dim(2).set_stride(1);
+                output.dim(0).set_stride(C);
+                output.dim(2).set_stride(1);
+            }
+        }
+    };
 } // namespace photog
 
 HALIDE_REGISTER_GENERATOR(photog::SrgbToLinear, photog_srgb_to_linear);
@@ -665,3 +741,4 @@ HALIDE_REGISTER_GENERATOR(photog::Average, photog_average);
 HALIDE_REGISTER_GENERATOR(photog::Chromadapt, photog_chromadapt_impl);
 HALIDE_REGISTER_GENERATOR(photog::ZeroMask, photog_zero_mask);
 HALIDE_REGISTER_GENERATOR(photog::ToroidalHistogram, photog_toroidal_histogram);
+HALIDE_REGISTER_GENERATOR(photog::LocalAbsoluteDeviation, photog_local_absolute_deviation);

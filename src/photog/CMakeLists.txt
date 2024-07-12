@@ -41,7 +41,8 @@ set(color_halide_libraries
         photog_average
         photog_chromadapt_impl
         photog_zero_mask
-        photog_toroidal_histogram)
+        photog_toroidal_histogram
+        photog_local_absolute_deviation)
 set(COLOR_HALIDE_LIBRARIES ${color_halide_libraries} PARENT_SCOPE)
 
 list(GET color_halide_libraries 0 first_halide_library)

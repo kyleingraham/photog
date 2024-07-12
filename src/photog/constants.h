@@ -13,6 +13,8 @@ namespace photog {
     constexpr uint8_t histogram_bin_count = 64;
 
     constexpr float histogram_starting_uv = -0.3125;
+
+    constexpr float epsilon = 2.2204e-16f;
 }
 
 #endif // PHOTOG_CONSTANTS_H

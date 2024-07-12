@@ -22,6 +22,7 @@
 #include "photog_average.h"
 #include "photog_zero_mask.h"
 #include "photog_toroidal_histogram.h"
+#include "photog_local_absolute_deviation.h"
 
 namespace photog {
     template<typename T>
@@ -89,6 +90,40 @@ Stats<T> get_stats(const Halide::Runtime::Buffer<T> &buffer) {
     }
 
     return stats;
+}
+
+TEST_CASE("testing photog_local_absolute_deviation") {
+    std::string image_path = R"(images/cheng/preprocessed/Cheng/Canon1DsMkIII/000001.png)";
+    Halide::Runtime::Buffer<float> input = photog::load_image<float>(image_path);
+    Halide::Runtime::Buffer<int> mask = Halide::Runtime::Buffer<int>{input.width(), input.height()};
+    Halide::Runtime::Buffer<float> output =
+            Halide::Runtime::Buffer<float>{input.width(), input.height(), input.channels()};
+
+    mask.fill(1);
+    photog_local_absolute_deviation(input, mask, output);
+    CHECK(output(0, 0, 0) == doctest::Approx(0.00197795));
+    CHECK(output(0, 0, 1) == doctest::Approx(0.00153352));
+    CHECK(output(0, 0, 2) == doctest::Approx(0.00123025));
+
+    mask(0, 0) = 0;
+    photog_local_absolute_deviation(input, mask, output);
+    // MATLAB implementation produces NaN for these elements.
+    // These numbers produced via manual calculation.
+    CHECK(output(0, 0, 0) == doctest::Approx(0.00316480));
+    CHECK(output(0, 0, 1) == doctest::Approx(0.00245360));
+    CHECK(output(0, 0, 2) == doctest::Approx(0.00196840));
+
+    /*
+     * To generate test data run the following in MATLAB using the Google ffcc repo:
+     *
+     *   cd('ffcc'); % Replace 'ffcc' with where you have downloaded the repo
+     *   addpath(genpath('.'));
+     *   img = imread('./data/cheng/preprocessed/Cheng/Canon1DsMkIII/000001.png');
+     *   I_valid = all(img > 0,3)
+     *   img_float = im2double(img)
+     *   img_edge = MaskedLocalAbsoluteDeviation(img_float, I_valid)
+     *   img_edge(1, 1, :)
+     */
 }
 
 TEST_CASE("testing photog_zero_mask") {
