@@ -541,11 +541,12 @@ namespace photog {
      * This is an integral part of the Google Fast Fourier Color Constancy algorithm.
      *
      * This method supports float (0-1) images only and requires:
-     * - a mask for pixels to be ignored
      * - a linear image
+     * - a mask for pixels to be ignored
+     * - an image, mask, and region that match in x and y dimensions
      */
-    Halide::Func toroidal_histogram(const Halide::Func &image, const Halide::Expr &image_width,
-                                    const Halide::Expr &image_height, const Halide::Func &external_mask) {
+    Halide::Func toroidal_histogram(const Halide::Func &image, const Halide::Func &external_mask,
+                                    const Halide::Region &region) {
         // Reference ffcc/internal/FeatureizeImage.m
         Halide::Var x{"x_toroidal_histogram"}, y{"y_toroidal_histogram"};
         Halide::Expr above_min_intensity{"above_min_intensity_toroidal_histogram"};
@@ -558,10 +559,7 @@ namespace photog {
         mask(x, y) = Halide::select(above_min_intensity, 1, 0) & external_mask(x, y);
         // Reference ffcc/internal/Psplat2.m
         Halide::Func u{"u_toroidal_histogram"}, v{"v_toroidal_histogram"};
-        Halide::RDom r_image{
-            {{0, image_width}, {0, image_height}},
-            "r_image_toroidal_histogram"
-        };
+        Halide::RDom r_image{region, "r_image_toroidal_histogram"};
         u(x, y) = 0.0f;
         u(r_image.x, r_image.y) =
                 (log(image(r_image.x, r_image.y, 1)) - log(image(r_image.x, r_image.y, 0))) *
@@ -607,7 +605,9 @@ namespace photog {
 
         void generate() {
             output(x, y) = toroidal_histogram(
-                input, input.width(), input.height(), mask
+                input,
+                mask,
+                {{input.dim(0).min(), input.dim(0).extent()}, {input.dim(1).min(), input.dim(1).extent()}}
             )(x, y);
         }
 
@@ -643,6 +643,17 @@ namespace photog {
         Halide::Var x{"x_ToroidalHistogram"}, y{"y_ToroidalHistogram"};
     };
 
+    /**
+     * Compute local absolute deviation (LAD) for the given 3-channel image.
+     * This is an integral part of the Google Fast Fourier Color Constancy algorithm.
+     *
+     * LAD is computed over a sliding 3x3 region by taking the average of the absolute
+     * difference of perimeter pixels from the centre pixel.
+     *
+     * This method supports float (0-1) images only and requires:
+     * - a mask for pixels to be ignored
+     * - an image, mask, and region that match in x and y dimensions
+     */
     Halide::Func local_absolute_deviation(const Halide::Func &image, const Halide::Func &mask,
                                           const Halide::Region &bounds) {
         // Reference ffcc/internal/MaskedLocalAbsoluteDeviation.m.
